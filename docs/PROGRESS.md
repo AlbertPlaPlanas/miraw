@@ -11,7 +11,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done**; Gate 1 passed on set 0 (all 10 configs), sets 1-9 running |
-| 4 Training stack | **done**; Gate 2 and the orientation experiment **running / not concluded** |
+| 4 Training stack | **done**; Gate 2 site level met by `natural`; gene-level check pending |
 | 5 Hardening and docs | not started (`docs/extending.md`, `docs/data.md`, lockfile, Java oracle comparison) |
 
 ## Gate results so far
@@ -24,10 +24,11 @@ Plan and decisions: [PLAN.md](PLAN.md).
   NegSites); not yet explained, suspected ViennaRNA 2.2 vs 2.7 energy differences near dG=0 or
   edge windows. The site finder reproduced 99.4 % of recorded sites exactly in the early prototype.
   Full 10 configs x 10 sets run: see "Running jobs".
-* **Gate 2 (retrained model):** NOT met yet. Baseline = paper models re-scored: acc 0.921 / AUC 0.9765. Shuffled
-  training gives ~0.88-0.90 / 0.954-0.964; the unshuffled paper regime is being evaluated (see Log).
-* **Orientation experiment (`old-default` vs `natural`):** shuffled regime: natural +0.004 acc / +0.002 AUC, not
-  significant (p 0.14-0.20). To be repeated in the paper regime (running).
+* **Gate 2 (retrained model):** site level MET by `natural` in the paper regime (acc 0.9249 / AUC 0.9766 vs paper models
+  0.9210 / 0.9765); `old-default` is at parity (0.9192 / 0.9752, not significantly worse). Gene level not yet run. Shuffled
+  training stays below (0.88-0.90 / 0.954-0.964).
+* **Orientation experiment (`old-default` vs `natural`):** paper regime: `natural` significantly better at site level
+  (AUC +0.0015, acc +0.0057, one-sided p <= 0.002); shuffled regime: not significant (p 0.14-0.20). Gene-level check pending.
 
 ## Running jobs (started 2026-10-27, on the dev machine; outputs are in the gitignored `runs/`)
 
@@ -69,6 +70,16 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-27 (21:40): **Gate 2, site level, paper regime** (`--no-shuffle --val-fraction 0 --max-epochs 10`, folds 0-8 x 3
+  seeds, XENT; raw rows in `docs/results/cv_paper_regime.csv`). Baseline = paper fold models re-scored (acc 0.9210 / AUC 0.9765):
+  old-default acc 0.9192 AUC 0.9752 (-0.002/-0.0014 vs paper, one-sided p(worse) 0.33/0.08: not significantly worse);
+  **natural acc 0.9249 AUC 0.9766 (+0.004/+0.0001, >= paper accuracy in 8/9 folds)**. No run collapsed.
+  **natural vs old-default** (27 paired runs): AUC +0.0015, acc +0.0057, F1 +0.0062; one-sided Wilcoxon p = 0.002 / 0.001 / 0.001;
+  better in 19-20/27. So the *site-level* part of decision 8 is met by `natural` (significant AND not below the paper).
+  **Still open before `natural` becomes the default for new models:** the gene-level part (mean F1 over the 10 configs x
+  balanced sets, paired, through the same pipeline) with retrained models, and the Gate 1 benchmark itself (sets 1-9).
+  The original weights remain the default until then. Note: AUC margin over the paper is tiny (+0.0001); treat as parity, not improvement.
 
 * 2026-10-27 (21:00): **Correction + root cause for Gate 2.** (1) The paper's recorded CV AUC (0.958) used coarse 0.05
   thresholds. Re-scoring the paper's 9 fold models with our metric code gives acc 0.9210 / AUC 0.9765
