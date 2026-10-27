@@ -1,7 +1,6 @@
 # One-word entry points. Run inside the conda env:  conda activate pymiraw
 ENV ?= pymiraw
 PY  ?= python
-S3  := scripts/with-s3-creds.sh
 
 .PHONY: env env-update install hooks test test-all lint parity train-cv data-pull data-verify
 
@@ -15,15 +14,15 @@ hooks:          ## install the pre-commit secret guards (once per clone)
 	pre-commit install
 test:           ## fast tests (what CI runs); tests needing the original weights skip if unavailable
 	$(PY) -m pytest -m "not slow and not acceptance"
-test-all:       ## everything, fetching the original weights from S3 on the dev box
-	$(S) $(PY) -m pytest
+test-all:       ## everything (needs data/original, see README)
+	$(PY) -m pytest
 lint:
 	ruff check src tests scripts && ruff format --check src tests scripts
-data-pull:      ## download the original miRAW weights (S3)
-	$(S) pymiraw data pull original-weights
+data-pull:      ## unpack the original weights/data from PLOSComb.7z (see README)
+	pymiraw data unpack-archive PLOSComb.7z
 data-verify:
 	pymiraw data verify original-weights
 parity:         ## Gate 1: reproduce the paper's benchmark with the original weights (hours)
-	$(S) pymiraw parity $(TEST_DIR) --output-dir runs/parity --cache-dir $$HOME/.cache/pymiraw/foldcache
+	pymiraw parity $(data/original/Data/TestData/balanced10) --output-dir runs/parity --cache-dir $$HOME/.cache/pymiraw/foldcache
 train-cv:       ## site-level cross-validation on the released folds, both orientations
-	for o in old-default natural; do pymiraw train $(FOLDS_DIR) --orientation $$o --seeds 3 --output-dir runs/train_$$o; done
+	for o in old-default natural; do pymiraw train $(data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary) --orientation $$o --seeds 3 --output-dir runs/train_$$o; done

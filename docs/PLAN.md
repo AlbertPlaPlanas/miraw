@@ -70,7 +70,10 @@ Evidence comes from the code, the saved models and the CV logs in `Results/Resul
      configs set it. The 0.2 is only the constructor default, which gets overwritten.
    * The CV logs print `Dropout rate= 0.0`, and the model JSON agrees.
    * The port's MLP keeps a `dropout` parameter (default 0.0) for future experiments.
-3. **Paper training regime, as it actually ran:**
+3. **Paper training regime, as it actually ran** (and one more finding, 2026-10-27: the training files
+   are strictly alternating 1,0,1,0,... and DL4J read them **in file order, never shuffled**, so every
+   batch of 50 was balanced and identical each epoch. Shuffling instead costs about 0.02 accuracy and
+   0.012 AUC; `pymiraw train --no-shuffle --val-fraction 0` reproduces the paper regime):
    * XENT, Nesterov 0.9, LR 0.005, batch 50, **max 10 epochs**;
    * no validation-based early stopping;
    * the "best" model is the epoch with the lowest *training* score (the last minibatch), at
@@ -399,8 +402,10 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
 * **Gate 2: retrained model (pyMIRAW training stack).** Folding is held fixed so the gate measures
   only the network.
   * Retrain on the *released* CV folds with ≥ 5 seeds.
-  * Site-level CV, paired per fold against `BestModelEval.txt`: mean accuracy ≥ 0.921 and mean
-    AUC ≥ 0.958.
+  * Site-level CV, paired per fold against the paper's own 9 fold models **re-scored with our
+    metric code** (`tests/fixtures/paper_cv_xent_models_rescored.csv`): mean accuracy ≥ 0.921 and
+    mean AUC ≥ 0.9765. The paper's *recorded* AUC (0.958) came from coarse 0.05-step thresholds
+    and understates its models, so it is not used as the baseline.
   * Gene-level: run the retrained model and the imported paper model through the *same* pipeline
     and backend. For every config, mean accuracy and F1 must not be below the imported model's.
     This is a strict paired non-inferiority check over the 10 sets: mean Δ ≥ 0, plus a one-sided

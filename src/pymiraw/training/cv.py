@@ -12,7 +12,8 @@ from pymiraw.models.artifact import save_artifact
 from pymiraw.training.data import load_fold
 from pymiraw.training.trainer import CollapsedModelError, TrainConfig, train_fold
 
-PAPER_CV = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "paper_cv_xent_best.csv"
+# the paper's own fold models re-scored with our metric code (their recorded AUC used coarse thresholds)
+PAPER_CV = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "paper_cv_xent_models_rescored.csv"
 
 
 def run_cv(folds_dir, cfg: TrainConfig, folds=range(9), seeds=(0,), out_dir=None) -> pd.DataFrame:

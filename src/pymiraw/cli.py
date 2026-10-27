@@ -106,6 +106,18 @@ def data_pull(key: str = typer.Argument("original-weights"), force: bool = False
     typer.echo(storage.pull(key, force=force))
 
 
+@data_app.command("unpack-archive")
+def data_unpack(
+    archive: str = typer.Argument(..., help="PLOSComb.7z from bitbucket.org/bipous/miraw_data"),
+    dest: str = typer.Option(None),
+):
+    """Unpack the original weights, balanced test sets and CV folds into data/original/."""
+    from pymiraw import storage
+
+    out = storage.unpack_archive(archive, dest or storage.ORIGINAL_DIR)
+    typer.echo(f"unpacked to {out}")
+
+
 @data_app.command("verify")
 def data_verify(key: str = typer.Argument("original-weights")):
     from pymiraw import storage
@@ -168,15 +180,28 @@ def train(
     seeds: int = typer.Option(1, help="Number of seeds (0..n-1)."),
     max_epochs: int = typer.Option(10),
     patience: int = typer.Option(0),
+    shuffle: bool = typer.Option(
+        True, "--shuffle/--no-shuffle", help="--no-shuffle = file order every epoch (paper regime)."
+    ),
+    val_fraction: float = typer.Option(
+        0.1, help="0 = train on all data, keep the lowest-training-loss epoch (paper regime)."
+    ),
 ):
     """Cross-validate a model on the released folds and compare with the paper (Gate 2, site level)."""
     from pymiraw.training.cv import compare_with_paper, run_cv
     from pymiraw.training.trainer import TrainConfig
 
     lo, _, hi = folds.partition("-")
-    cfg = TrainConfig(loss=loss, site_orientation=orientation, max_epochs=max_epochs, patience=patience)
+    cfg = TrainConfig(
+        loss=loss,
+        site_orientation=orientation,
+        max_epochs=max_epochs,
+        patience=patience,
+        val_fraction=val_fraction,
+        shuffle=shuffle,
+    )
     df = run_cv(folds_dir, cfg, range(int(lo), int(hi or lo) + 1), range(seeds), output_dir)
     Path(output_dir).mkdir(parents=True, exist_ok=True)
-    df.to_csv(Path(output_dir) / f"cv_{orientation}.csv", index=False)
+    df.to_csv(Path(output_dir) / f"cv_{orientation}.csv", index=False)  # one file per orientation per output_dir
     typer.echo(df.round(4).to_string(index=False))
     typer.echo(json.dumps(compare_with_paper(df), indent=2, default=float))

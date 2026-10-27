@@ -74,3 +74,30 @@ def test_legacy_properties_parsing(tmp_path):
     cfg = from_legacy_properties(p)
     assert cfg.finder == "Personalized;1;9;7" and cfg.filters == ["AccessibilityEnergy;10"]
     assert (cfg.max_site_length, cfg.seed_alignment_offset) == (40, 5) and cfg.uses_original_weights
+
+
+def test_local_repo_weights_are_used_before_the_mirror(tmp_path, monkeypatch):
+    from pymiraw import storage
+
+    f = tmp_path / "bestModel.bin"
+    f.write_bytes(b"x")
+    monkeypatch.delenv(ORIGINAL_WEIGHTS_ENV, raising=False)
+    monkeypatch.setattr(storage, "LOCAL_WEIGHTS", f)
+    assert storage.original_weights_path() == f
+
+
+def test_unpack_archive_flattens_and_filters(tmp_path):
+    import py7zr
+
+    from pymiraw import storage
+
+    src = tmp_path / "src"
+    for rel in ("NetworkModel/bestModel.bin", "Data/TestData/balanced10/a.csv", "Data/Other/skip.csv"):
+        (src / "PLOSComb" / rel).parent.mkdir(parents=True, exist_ok=True)
+        (src / "PLOSComb" / rel).write_text("1")
+    with py7zr.SevenZipFile(tmp_path / "a.7z", "w") as z:
+        z.writeall(src / "PLOSComb", "PLOSComb")
+    out = storage.unpack_archive(tmp_path / "a.7z", tmp_path / "dest")
+    assert (out / "NetworkModel" / "bestModel.bin").is_file()
+    assert (out / "Data" / "TestData" / "balanced10" / "a.csv").is_file()
+    assert not (out / "Data" / "Other").exists()

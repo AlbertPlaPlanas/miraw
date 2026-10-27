@@ -7,10 +7,10 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 | Phase | State |
 |---|---|
-| 0 Bootstrap (env, skeleton, S3, hooks, CI) | **done**, except: lockfile (`conda-lock.yml`) not generated; Java reference env (`environment-reference.yml`) not created; only the original weights are mirrored to S3 (the 1 GB archive is not) |
+| 0 Bootstrap (env, skeleton, S3, hooks, CI) | **done**, `conda-lock.yml` generated (linux-64); not done: Java reference env (`environment-reference.yml`) not created; only the original weights are mirrored to S3 (the 1 GB archive is not) |
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
-| 3 Prediction and evaluation | **done**; Gate 1 benchmark **running** (see below) |
+| 3 Prediction and evaluation | **done**; Gate 1 passed on set 0 (all 10 configs), sets 1-9 running |
 | 4 Training stack | **done**; Gate 2 and the orientation experiment **running / not concluded** |
 | 5 Hardening and docs | not started (`docs/extending.md`, `docs/data.md`, lockfile, Java oracle comparison) |
 
@@ -24,10 +24,10 @@ Plan and decisions: [PLAN.md](PLAN.md).
   NegSites); not yet explained, suspected ViennaRNA 2.2 vs 2.7 energy differences near dG=0 or
   edge windows. The site finder reproduced 99.4 % of recorded sites exactly in the early prototype.
   Full 10 configs x 10 sets run: see "Running jobs".
-* **Gate 2 (retrained model):** single smoke run, fold 6, seed 0, XENT, 10 epochs, checkpoint on
-  validation loss: accuracy 0.891, AUC 0.9595. Paper mean over folds 0-8: accuracy 0.921, AUC 0.958.
-  Accuracy is below the paper, so tuning may be needed. The 3-seed, 9-fold runs are in progress.
-* **Orientation experiment (`old-default` vs `natural`):** not concluded (runs in progress).
+* **Gate 2 (retrained model):** NOT met yet. Baseline = paper models re-scored: acc 0.921 / AUC 0.9765. Shuffled
+  training gives ~0.88-0.90 / 0.954-0.964; the unshuffled paper regime is being evaluated (see Log).
+* **Orientation experiment (`old-default` vs `natural`):** shuffled regime: natural +0.004 acc / +0.002 AUC, not
+  significant (p 0.14-0.20). To be repeated in the paper regime (running).
 
 ## Running jobs (started 2026-10-27, on the dev machine; outputs are in the gitignored `runs/`)
 
@@ -69,6 +69,43 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-27 (21:00): **Correction + root cause for Gate 2.** (1) The paper's recorded CV AUC (0.958) used coarse 0.05
+  thresholds. Re-scoring the paper's 9 fold models with our metric code gives acc 0.9210 / AUC 0.9765
+  (`tests/fixtures/paper_cv_xent_models_rescored.csv`); that is the Gate 2 baseline now (PLAN.md updated). All earlier
+  "AUC at parity" statements below are superseded. (2) Retrained, shuffled, all data, 20 epochs: acc 0.903 / AUC 0.964,
+  below the baseline in all 9 folds. (3) Cause: the released train files alternate labels 1,0,1,0... and DL4J read them
+  in file order without shuffling. Unshuffled training (10 epochs, all data) on folds 6 and 0, 2 seeds: acc 0.91-0.935,
+  AUC 0.973-0.980 (paper models 0.935/0.981 and 0.902/0.977); shuffled: ~0.90/0.965. (4) Added `--no-shuffle`
+  (and fixed a bug where the CLI did not pass it on; regression test added). Running now: full CV in the paper regime
+  (`--no-shuffle --val-fraction 0 --max-epochs 10`, 9 folds x 3 seeds, both orientations) ->
+  `runs/train_paperRegime_{old-default,natural}/cv_*.csv`. Gate 2 and the orientation verdict are decided from these.
+
+* 2026-10-27 (20:00): **Gate 1, set 0 complete (all 10 configs):** every config within 0.005 accuracy and 0.005 F1
+  of the paper (tolerance 0.03); `miRAW-6-1:10 AE` identical to the paper (440/209/339/108). Other configs differ by
+  1-5 pairs per cell (e.g. 7-1:10 AE 385/150/398/163 vs 380/149/399/168). Confirms: accessibility filter = remove
+  if dG_open > +10, all four finders, original weights. Sets 1-9 still running (`runs/parity/`, warm cache).
+
+* 2026-10-27 (latest): **Gate 1, first full run:** `miRAW` NF on balanced set 0, original weights, ViennaRNA 2.7.2
+  bindings: TP/FP/TN/FN = 511/350/198/37 vs paper 510/349/199/38 (accuracy 0.64690 vs 0.64690, F1 0.7253 vs 0.7249).
+  Within one pair per cell. (Run took ~2 h while sharing the machine with training; fold cache now warm.)
+  **Retraining, site-level CV, folds 0-8 x 3 seeds, val_fraction 0.1, 10 epochs, checkpoint on val loss:**
+  old-default acc 0.884 / AUC 0.954; natural acc 0.888 / AUC 0.956; paper acc 0.921 / AUC 0.958; none collapsed.
+  natural vs old-default: mean AUC +0.0022 (p=0.20), acc +0.0040 (p=0.14), better in 16/27 -> not significant, so
+  per decision 8 `old-default` stays. **Gate 2 NOT met** (accuracy 0.884 < 0.921; AUC 0.954 < 0.958).
+  Diagnostic (fold 0 and 6, 2 seeds, all train data, per-epoch test AUC): AUC reaches 0.962-0.971 at 10-30 epochs
+  (paper 0.949 / 0.968), accuracy stays ~0.89-0.91 at threshold score>0 (paper 0.902 / 0.935). So ranking quality
+  is at parity; the accuracy gap looks like holdout + short training + threshold effects. Added `--val-fraction 0`
+  (train on all data, keep lowest-training-loss epoch = paper regime). Running: 20 epochs, 9 folds x 3 seeds ->
+  `runs/train_allData_e20/cv_old-default.csv`.
+
+* 2026-10-27 (later): README is now marked work-in-progress and path-based (no S3 mention). Added
+  `pymiraw data unpack-archive PLOSComb.7z [--dest]` (default `data/original/`, gitignored) and made
+  `data/original/NetworkModel/bestModel.bin` the first place the original weights are looked up
+  (order: `$PYMIRAW_ORIGINAL_WEIGHTS`, local path, S3 mirror). Verified on the real archive (10 test
+  sets, 20 fold files, weights byte-identical). Generated `conda-lock.yml`. 86 unit tests pass.
+  GPU: training already uses the T4 (Lightning `auto`); the parity benchmark is bound by ViennaRNA
+  folding on CPU and cannot use the GPU. Machine load while both jobs run was only ~8/16 cores.
 
 * 2026-10-27: Implemented phases 0-4 (see Status). 88 tests pass. Original-weights flag
   (`--original-weights`, default) + S3 fetch with sha256 check. Secret guards in place.

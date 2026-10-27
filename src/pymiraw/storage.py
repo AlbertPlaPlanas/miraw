@@ -11,6 +11,16 @@ import yaml
 DEFAULT_MANIFEST = Path(__file__).resolve().parents[2] / "data" / "manifest.yaml"
 ORIGINAL_WEIGHTS_KEY = "original-weights"
 ORIGINAL_WEIGHTS_ENV = "PYMIRAW_ORIGINAL_WEIGHTS"  # point at a local copy to skip S3 entirely
+REPO_ROOT = Path(__file__).resolve().parents[2]
+ORIGINAL_DIR = REPO_ROOT / "data" / "original"  # where `pymiraw data unpack-archive` puts the paper data
+LOCAL_WEIGHTS = ORIGINAL_DIR / "NetworkModel" / "bestModel.bin"
+ARCHIVE_URL = "https://bitbucket.org/bipous/miraw_data/raw/master/PLOSComb.7z"
+UNPACK_PATTERNS = (
+    "PLOSComb/NetworkModel/bestModel.bin",
+    "PLOSComb/Data/TestData/balanced10/",
+    "PLOSComb/Data/CrossVal/RelaxedPW60_14K_35K/binary/",
+    "PLOSComb/Results/GlobalSummary.xls",
+)
 
 
 def cache_dir() -> Path:
@@ -77,12 +87,35 @@ def push(key: str, src: str | Path, manifest: dict | None = None) -> str:
     return uri
 
 
+def unpack_archive(archive: str | Path, dest: str | Path = ORIGINAL_DIR) -> Path:
+    """Extract the parts of the paper archive (PLOSComb.7z) that pyMIRAW uses into ``dest``."""
+    import py7zr
+
+    with py7zr.SevenZipFile(archive) as z:
+        targets = [i.filename for i in z.list() if i.filename.startswith(UNPACK_PATTERNS)]
+    if not targets:
+        raise ValueError(f"{archive} does not look like PLOSComb.7z")
+    dest = Path(dest)
+    with py7zr.SevenZipFile(archive) as z:
+        z.extract(path=dest, targets=targets)
+    for child in (dest / "PLOSComb").iterdir():  # drop the top-level folder: dest/NetworkModel, dest/Data, ...
+        child.rename(dest / child.name)
+    (dest / "PLOSComb").rmdir()
+    return dest
+
+
 def original_weights_path() -> Path:
-    """Path of the original miRAW paper weights (DL4J ``bestModel.bin``), fetched on first use."""
+    """Path of the original miRAW paper weights (DL4J ``bestModel.bin``).
+
+    Order: ``$PYMIRAW_ORIGINAL_WEIGHTS``, then ``data/original/NetworkModel/bestModel.bin`` (created by
+    ``pymiraw data unpack-archive``), then the checksum-verified download from the project mirror.
+    """
     override = os.environ.get(ORIGINAL_WEIGHTS_ENV)
     if override:
         p = Path(override)
         if not p.is_file():
             raise FileNotFoundError(f"{ORIGINAL_WEIGHTS_ENV}={override} does not exist")
         return p
+    if LOCAL_WEIGHTS.is_file():
+        return LOCAL_WEIGHTS
     return pull(ORIGINAL_WEIGHTS_KEY)
