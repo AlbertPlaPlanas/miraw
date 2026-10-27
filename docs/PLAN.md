@@ -122,7 +122,10 @@ Evidence comes from the code, the saved models and the CV logs in `Results/Resul
          Wilcoxon p < 0.05.
      * A tie or a non-significant difference keeps `old-default` (no churn).
      * Results are recorded in `docs/parity.md` either way.
-   * **Expectation:** for the MLP, orientation is only a fixed permutation of input features,
+   * **Outcome (2026-10-27): `old-default` kept.** In the paper regime `natural` is significantly better at site
+     level (AUC +0.0015, one-sided p <= 0.002) but not at gene level (F1 -0.006, p = 0.76), so the plan's rule
+     (both metrics must win) keeps `old-default`. Details in `docs/PROGRESS.md`; rerun for position-aware models.
+   * **Expectation (written before the experiment):** for the MLP, orientation is only a fixed permutation of input features,
      which a fully connected network can absorb, so a difference within seed noise is the likely
      outcome. The experiment still validates the `natural` path, which will matter for
      position-aware architectures (CNN/RNN/Transformer). Those should rerun this comparison when

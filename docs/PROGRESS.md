@@ -11,7 +11,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done**; Gate 1 passed on set 0 (all 10 configs), sets 1-9 running |
-| 4 Training stack | **done**; Gate 2 site level met by `natural`; gene-level check pending |
+| 4 Training stack | **done**; Gate 2 at statistical parity (old-default kept as orientation); not promoted |
 | 5 Hardening and docs | not started (`docs/extending.md`, `docs/data.md`, lockfile, Java oracle comparison) |
 
 ## Gate results so far
@@ -24,11 +24,11 @@ Plan and decisions: [PLAN.md](PLAN.md).
   NegSites); not yet explained, suspected ViennaRNA 2.2 vs 2.7 energy differences near dG=0 or
   edge windows. The site finder reproduced 99.4 % of recorded sites exactly in the early prototype.
   Full 10 configs x 10 sets run: see "Running jobs".
-* **Gate 2 (retrained model):** site level MET by `natural` in the paper regime (acc 0.9249 / AUC 0.9766 vs paper models
-  0.9210 / 0.9765); `old-default` is at parity (0.9192 / 0.9752, not significantly worse). Gene level not yet run. Shuffled
-  training stays below (0.88-0.90 / 0.954-0.964).
-* **Orientation experiment (`old-default` vs `natural`):** paper regime: `natural` significantly better at site level
-  (AUC +0.0015, acc +0.0057, one-sided p <= 0.002); shuffled regime: not significant (p 0.14-0.20). Gene-level check pending.
+* **Gate 2 (retrained model):** statistical parity, not promoted. Site level: natural 0.9249 / 0.9766, old-default 0.9192 / 0.9752 vs
+  paper models 0.9210 / 0.9765. Gene level (fold 6, NF configs, sets 0-1): old-default +0.003 F1, natural -0.002 F1 vs paper. Shuffled
+  training stays below (0.88-0.90 / 0.954-0.964). AE configs and the other sets are still to run.
+* **Orientation experiment (`old-default` vs `natural`):** DECIDED: keep `old-default`. `natural` is significantly better at site
+  level (paper regime: AUC +0.0015, acc +0.0057, p <= 0.002) but not at gene level (F1 -0.006 vs old-default, p = 0.76).
 
 ## Running jobs (started 2026-10-27, on the dev machine; outputs are in the gitignored `runs/`)
 
@@ -70,6 +70,18 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-27 (23:00): **Gate 2, gene level (retrained fold-6 models, 3 seeds each, balanced sets 0-1, 5 unfiltered configs,
+  same pipeline/folding as the paper numbers; rows in `docs/results/gene_level_fold6_retrained.csv`, script
+  `scripts/gene_level_compare.py`).** Mean difference vs the paper's GlobalSummary: **old-default dAcc +0.007, dF1 +0.003**
+  (F1 >= paper in 6/10 config-set cells; one-sided p(worse) 0.90; best on `miRAW` NF: +0.013 F1); **natural dAcc -0.003, dF1 -0.002**
+  (3/10 cells; p(worse) 0.12). natural - old-default gene-level F1: -0.0056, better in 16/30, one-sided p = 0.76.
+  **Verdict per PLAN decision 8: `old-default` stays the default orientation for new models** (natural's site-level
+  advantage does not carry to gene level). Neither is significantly worse than the paper at gene level.
+  **Caveats:** only fold 6, unfiltered (NF) configs and sets 0-1; AE configs and sets 2-9 not yet run for retrained models;
+  site-level, `old-default` is nominally below the paper's means (acc 0.9192 vs 0.9210, AUC 0.9752 vs 0.9765; not significant),
+  so the strict "mean >= paper" wording of Gate 2 is not literally met by either orientation. Retrained models are therefore
+  NOT promoted: `--original-weights` stays the default. Retrained fold-6 artefacts are in `runs/train_paperRegime_*/` (not in git).
 
 * 2026-10-27 (21:40): **Gate 2, site level, paper regime** (`--no-shuffle --val-fraction 0 --max-epochs 10`, folds 0-8 x 3
   seeds, XENT; raw rows in `docs/results/cv_paper_regime.csv`). Baseline = paper fold models re-scored (acc 0.9210 / AUC 0.9765):
