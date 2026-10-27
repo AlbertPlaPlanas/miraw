@@ -71,7 +71,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
-* 2026-10-27 (resume): Gate 1 still running, `runs/parity` has 70 entries (set 6 in progress, no `comparison.csv` yet). Wrote `docs/data.md`. Next: when `comparison.csv` appears, copy it to `docs/results/`, record the full 10-set result here.
+* 2026-10-27 (resume): Gate 1 verified alive at 23:54: parent pid 12086 up 5 h, 14 workers all running at ~42 % CPU, fold cache still being written; sets 0-6 complete (70 of 100 runs, set 6 finished 23:46, ~17 min per set), set 7 folding, so ETA is about 1 h; `runs/parity.log` is empty (0 bytes), so watch `ls runs/parity | wc -l` instead; no `comparison.csv` yet. Wrote `docs/data.md`. Next: when `comparison.csv` appears, copy it to `docs/results/`, record the full 10-set result here.
 
 * 2026-10-28 (02:00): **Gate 1 interim, test sets 0-5 complete (60 of 100 runs; sets 6-9 still running).** Mean over the 6 sets,
   every config within **0.0046 accuracy / 0.0080 F1** of the paper's GlobalSummary (tolerance 0.03): all 10 configs PASS
