@@ -24,7 +24,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
   NegSites); not yet explained, suspected ViennaRNA 2.2 vs 2.7 energy differences near dG=0 or
   edge windows. The site finder reproduced 99.4 % of recorded sites exactly in the early prototype.
   Full 10 configs x 10 sets run: see "Running jobs".
-* **Gate 2 (retrained model):** statistical parity, not promoted. Site level: natural 0.9249 / 0.9766, old-default 0.9192 / 0.9752 vs
+* **Gate 2 (retrained model):** PASSES the agreed non-inferiority rule on the partial evidence (see Log 23:30), not promoted. Site level: natural 0.9249 / 0.9766, old-default 0.9192 / 0.9752 vs
   paper models 0.9210 / 0.9765. Gene level (fold 6, NF configs, sets 0-1): old-default +0.003 F1, natural -0.002 F1 vs paper. Shuffled
   training stays below (0.88-0.90 / 0.954-0.964). AE configs and the other sets are still to run.
 * **Orientation experiment (`old-default` vs `natural`):** DECIDED: keep `old-default`. `natural` is significantly better at site
@@ -70,6 +70,14 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-27 (23:30): **Gate 2 rule changed to non-inferiority at 99 % one-sided confidence** (owner decision; margins
+  0.01 accuracy/F1, 0.005 AUC are my proposal, adjustable constants in `pymiraw/evaluation/noninferiority.py`).
+  `scripts/gate2_report.py` on the committed results (folds 0-8 site level; fold-6 models, 5 NF configs, sets 0-1 gene level):
+  **PASS for both orientations on all 8 rows.** Fragile passes (slack < 0.001): old-default site accuracy (lower bound
+  -0.0099 vs limit -0.0100) and old-default site AUC (-0.0045 vs -0.0050, slack 0.0005). natural gene accuracy slack 0.0011.
+  Passing on this partial evidence does not promote the model; remaining evidence to collect for the final Gate 2:
+  filtered (AE) configs and all 10 sets at gene level, other folds' models. The original weights stay the default.
 
 * 2026-10-27 (23:00): **Gate 2, gene level (retrained fold-6 models, 3 seeds each, balanced sets 0-1, 5 unfiltered configs,
   same pipeline/folding as the paper numbers; rows in `docs/results/gene_level_fold6_retrained.csv`, script

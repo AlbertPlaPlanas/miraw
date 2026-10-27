@@ -402,19 +402,23 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
   * With the 2.2.5 CLI backend: TP/FP/TN/FN equal GlobalSummary per set and per config. Fewer than
     0.5 % of pairs may differ, each explained.
   * This gate proves the port is correct.
-* **Gate 2: retrained model (pyMIRAW training stack).** Folding is held fixed so the gate measures
-  only the network.
-  * Retrain on the *released* CV folds with ≥ 5 seeds.
-  * Site-level CV, paired per fold against the paper's own 9 fold models **re-scored with our
-    metric code** (`tests/fixtures/paper_cv_xent_models_rescored.csv`): mean accuracy ≥ 0.921 and
-    mean AUC ≥ 0.9765. The paper's *recorded* AUC (0.958) came from coarse 0.05-step thresholds
-    and understates its models, so it is not used as the baseline.
-  * Gene-level: run the retrained model and the imported paper model through the *same* pipeline
-    and backend. For every config, mean accuracy and F1 must not be below the imported model's.
-    This is a strict paired non-inferiority check over the 10 sets: mean Δ ≥ 0, plus a one-sided
-    Wilcoxon test showing no significant decrease.
-  * Only a model that passes is promoted to the default. Until then, the original weights
-    (`--original-weights`, `model: original`) stay the default, so pyMIRAW is never worse than miRAW.
+* **Gate 2: retrained model (pyMIRAW training stack): non-inferiority.** Rule agreed 2026-10-27, replacing
+  the earlier "mean at least as high as the paper". Folding is held fixed so the gate measures only the
+  network. A retrained model passes if, for every row below, the **one-sided 99 % lower confidence bound
+  (t-based) of the mean paired difference (ours - paper) is above -margin**, with margins 0.01 for
+  accuracy and F1 and 0.005 for AUC (`pymiraw.evaluation.noninferiority`: `CONFIDENCE`, `MARGINS`).
+  * Site level: per-fold differences over folds 0-8 (seed-averaged), 9 paired values, versus the paper's
+    own fold models **re-scored with our metric code** (`tests/fixtures/paper_cv_xent_models_rescored.csv`;
+    acc 0.9210, AUC 0.9765). The paper's *recorded* AUC (0.958) used coarse thresholds and is not the
+    baseline. Metrics: accuracy, AUC. Retraining uses the paper regime (`--no-shuffle --val-fraction 0`).
+  * Gene level: per (config x balanced test set) differences, run through the same pipeline and folding
+    backend as the paper numbers (`tests/fixtures/paper_global_summary.csv`). Metrics: accuracy, F1.
+    The final check must cover all 10 configs (NF and AE) and all 10 sets.
+  * `scripts/gate2_report.py` evaluates the rule from the committed result files and exits non-zero on failure.
+  * Limits: the cells of the gene-level check share pairs across configs, so its bounds are optimistic;
+    passes with slack below 0.001 are flagged as fragile. The margins were chosen after seeing the data.
+  * Passing does **not** promote a model automatically: the original weights (`--original-weights`,
+    `model: original`) remain the default unless the owner decides otherwise, so pyMIRAW is never worse than miRAW.
 * **Gate 3: full unbalanced test set** (`Evaluate_14K_FULL`): AUC ≥ the paper's (> 0.75) for the
   default model.
 

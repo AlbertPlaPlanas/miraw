@@ -22,6 +22,8 @@ data-pull:      ## unpack the original weights/data from PLOSComb.7z (see README
 	pymiraw data unpack-archive PLOSComb.7z
 data-verify:
 	pymiraw data verify original-weights
+gate2:          ## Gate 2 non-inferiority report from the committed results
+	python scripts/gate2_report.py
 parity:         ## Gate 1: reproduce the paper's benchmark with the original weights (hours)
 	pymiraw parity $(data/original/Data/TestData/balanced10) --output-dir runs/parity --cache-dir $$HOME/.cache/pymiraw/foldcache
 train-cv:       ## site-level cross-validation on the released folds, both orientations

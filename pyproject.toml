@@ -45,3 +45,5 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/pymiraw/cli.py" = ["B008"]
+"scripts/*_report.py" = ["E501"]
+"scripts/gene_level_compare.py" = ["E501"]
