@@ -12,7 +12,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done**; Gate 1 passes on sets 0-5 (all 10 configs, means within 0.008), sets 6-9 running |
 | 4 Training stack | **done**; Gate 2 at statistical parity (old-default kept as orientation); not promoted |
-| 5 Hardening and docs | not started (`docs/extending.md`, `docs/data.md`, lockfile, Java oracle comparison) |
+| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, final Gate 1 (sets 6-9) / Gate 2 (AE configs, all sets) |
 
 ## Gate results so far
 
@@ -70,6 +70,8 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-27 (resume): Gate 1 still running, `runs/parity` has 70 entries (set 6 in progress, no `comparison.csv` yet). Wrote `docs/data.md`. Next: when `comparison.csv` appears, copy it to `docs/results/`, record the full 10-set result here.
 
 * 2026-10-28 (02:00): **Gate 1 interim, test sets 0-5 complete (60 of 100 runs; sets 6-9 still running).** Mean over the 6 sets,
   every config within **0.0046 accuracy / 0.0080 F1** of the paper's GlobalSummary (tolerance 0.03): all 10 configs PASS
