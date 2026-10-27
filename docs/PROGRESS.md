@@ -10,7 +10,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 0 Bootstrap (env, skeleton, S3, hooks, CI) | **done**, `conda-lock.yml` generated (linux-64); not done: Java reference env (`environment-reference.yml`) not created; only the original weights are mirrored to S3 (the 1 GB archive is not) |
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
-| 3 Prediction and evaluation | **done**; Gate 1 passed on set 0 (all 10 configs), sets 1-9 running |
+| 3 Prediction and evaluation | **done**; Gate 1 passes on sets 0-5 (all 10 configs, means within 0.008), sets 6-9 running |
 | 4 Training stack | **done**; Gate 2 at statistical parity (old-default kept as orientation); not promoted |
 | 5 Hardening and docs | not started (`docs/extending.md`, `docs/data.md`, lockfile, Java oracle comparison) |
 
@@ -70,6 +70,16 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-28 (02:00): **Gate 1 interim, test sets 0-5 complete (60 of 100 runs; sets 6-9 still running).** Mean over the 6 sets,
+  every config within **0.0046 accuracy / 0.0080 F1** of the paper's GlobalSummary (tolerance 0.03): all 10 configs PASS
+  (`docs/results/gate1_interim_comparison.csv`; per-run rows `docs/results/gate1_interim_sets0-5.csv`). Largest mean
+  differences are on `miRAW-TS AE` (-0.0046 / -0.0080), the rest below 0.003. **Three single (config, set) cells exceed 0.01**
+  (TS AE set 3: -0.031 acc / -0.061 F1; Personalized;1;9;7 AE set 2: -0.018; Personalized;0;9;7 AE set 2: -0.011). Checked against the
+  original per-run output files (`Results/Evaluate_14K_XENT/<config>_<set>/targetPredictionOutput.csv`): for TS AE set 3 the original run
+  gives TP=193, FN=355, **identical to pyMIRAW** (the summary spreadsheet row, TP 226 / FN 322, disagrees with its own run file, and that
+  run is incomplete: 814 of 1096 pairs); the two Personalized AE set-2 run files are truncated (103 and 147 rows) and their summary row has
+  a non-integer TP (397.6), so they cannot be checked. Conclusion: the outliers come from the reference data, not from the port.
 
 * 2026-10-28 (01:00): **The port is bit-exact with the original ViennaRNA version.** Created `environment-reference.yml`
   (`pymiraw-ref`: ViennaRNA 2.2.5 + OpenJDK 8). First 64 pairs of balanced set 0, `miRAW` NF, original weights
