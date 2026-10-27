@@ -1,0 +1,36 @@
+# Free GitHub-hosted runner, CPU only, no secrets, no S3. Heavy/GPU/oracle tests run locally.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "**.md"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          cache-environment: true
+          cache-downloads: true
+      - name: install package
+        shell: bash -el {0}
+        run: pip install -e . --no-deps
+      - name: lint
+        shell: bash -el {0}
+        run: ruff check src tests scripts
+      - name: tests (original-weights tests skip without S3)
+        shell: bash -el {0}
+        run: pytest -m "not slow and not acceptance" -q

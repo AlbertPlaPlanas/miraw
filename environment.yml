@@ -1,0 +1,34 @@
+name: pymiraw
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - python=3.12
+  - viennarna=2.7.2
+  - pytorch>=2.5
+  - lightning>=2.4
+  - numpy
+  - pandas
+  - pyarrow
+  - scikit-learn
+  - scipy
+  - pydantic>=2
+  - pyyaml
+  - typer
+  - rich
+  - joblib
+  - tqdm
+  - fsspec
+  - s3fs
+  - boto3
+  - py7zr
+  - xlrd
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - hypothesis
+  - ruff
+  - mypy
+  - pre-commit
+  - pip

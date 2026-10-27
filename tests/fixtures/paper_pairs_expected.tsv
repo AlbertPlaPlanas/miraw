@@ -1,0 +1,7 @@
+GeneName	miRNA	RealClass	Prediction	PosSites	NegSites
+TMEM136	hsa-miR-129-1-3p	1	0.99740654	3	3
+GAS6	hsa-miR-376a-3p	1	0.98212546	5	1
+INTS2	hsa-miR-30e-5p	1	0.99481165	2	0
+TH	hsa-miR-10b-5p	0	-0.97502816	0	6
+SSB	hsa-miR-99a-5p	0	-0.1707223	0	2
+MMP3	hsa-miR-199a-5p	0	0.9676204	7	1

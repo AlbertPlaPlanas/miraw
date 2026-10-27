@@ -1,0 +1,19 @@
+# Heavy artefacts live on S3 (never in git). `pymiraw data pull <key>` downloads and verifies them.
+# Credentials: standard AWS chain; on the dev box run via scripts/with-s3-creds.sh.
+root: s3://digitalrnd-drf-projects-raw-ireland/spatial_omics/dev/pyMIRAW
+files:
+  original-weights:
+    path: raw/original/miraw_data/NetworkModel/bestModel.bin
+    sha256: 416b1f564562cbe611e72eb30339fa0b1b716da1791367be09248dee1ec955f5
+    size: 3080743
+    note: >-
+      The miRAW paper model (DL4J zip), byte-identical to CV Set6/bestModel.bin of the XENT run.
+      Source: bitbucket.org/bipous/miraw_data (PLOSComb.7z). GPL-3.0, (c) the miRAW authors.
+  paper-archive:
+    path: raw/original/miraw_data/PLOSComb.7z
+    sha256: 7731647987ff10ab934bd4d13ee589cae8b57fe42f8b29cea1325dc02983ecba
+    size: 1004886686
+    note: >-
+      Paper data archive (bitbucket.org/bipous/miraw_data): balanced test sets, CV folds, training
+      sites, configs and Results/. Unpack Data/TestData/balanced10 and Data/CrossVal/RelaxedPW60_14K_35K/binary
+      to run 'pymiraw parity' and 'pymiraw train'.
