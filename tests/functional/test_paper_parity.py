@@ -1,6 +1,7 @@
 """Functional tests against the original miRAW paper model and results (need the original weights)."""
 
 import json
+import os
 
 import numpy as np
 import pandas as pd
@@ -94,3 +95,20 @@ def test_cli_default_model_is_the_original_weights(original_weights, fixtures, t
         ],
     )
     assert r.exit_code == 0 and "original miRAW" in r.output
+
+
+REF_BIN = "/opt/conda/envs/pymiraw-ref/bin"
+
+
+@pytest.mark.reference
+@pytest.mark.skipif(
+    not os.path.exists(f"{REF_BIN}/RNAcofold"), reason="needs the pymiraw-ref environment (ViennaRNA 2.2.5)"
+)
+def test_exact_match_with_the_original_viennarna_version(paper_cfg, fixtures):
+    """With ViennaRNA 2.2.5 (the version miRAW was built against) the port reproduces the published
+    per-pair results exactly: same site counts and the same scores."""
+    cfg = {**paper_cfg, "backend": "cli", "backend_args": {"bin_dir": REF_BIN}}
+    got = results_frame(predict_file(fixtures / "paper_pairs.tsv", cfg, workers=3))
+    exp = pd.read_csv(fixtures / "paper_pairs_expected.tsv", sep="\t")
+    assert list(got.PosSites) == list(exp.PosSites) and list(got.NegSites) == list(exp.NegSites)
+    assert np.abs(got.Prediction.values - exp.Prediction.values).max() < 1e-5

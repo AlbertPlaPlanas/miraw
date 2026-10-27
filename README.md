@@ -53,6 +53,19 @@ Mature_mirna_transcript, 3UTR_transcript` (an example is `tests/fixtures/paper_p
 Site finders: `miRAW` (paper 6-1:10), `Personalized;0;9;7` (7-1:10), `Personalized;1;9;7` (7-2:10),
 `PITA`, `TS`. Filter: `--filter AccessibilityEnergy;10`.
 
+## Exact reproduction with the original ViennaRNA
+
+The default folding backend is ViennaRNA 2.7 (fast, in-process). The paper's numbers were produced with
+an older ViennaRNA whose energies differ slightly. For an exact match use the 2.2.5 reference environment:
+
+```bash
+conda env create -f environment-reference.yml                         # -> /opt/conda/envs/pymiraw-ref
+pymiraw evaluate pairs.tsv --original-weights --backend cli --vienna-bin /opt/conda/envs/pymiraw-ref/bin
+```
+
+`--vienna-bin` is the folder holding the 2.2.5 `RNAcofold`/`RNAfold` tools (omit it to use the tools on the PATH).
+The same option exists for `pymiraw parity`. The command-line backend is much slower than the default.
+
 ## Reproduce the paper benchmark, retrain
 
 ```bash
@@ -69,6 +82,7 @@ Adding a new architecture (CNN, RNN, Transformer): see [docs/extending.md](docs/
 |---|---|
 | Imported original weights reproduce the paper's fold-6 accuracy | exact (0.935143) |
 | Pipeline vs paper, balanced test set 0, 10 configurations | all within 0.005 accuracy/F1 (tolerance 0.03) |
+| Pipeline vs paper with the original ViennaRNA version (2.2.5, `environment-reference.yml`) | exact: identical site counts and scores on 64 pairs |
 | Pipeline vs paper, test sets 1-9 | running |
 | Retrained model vs the paper's own fold models (site level, folds 0-8) | non-inferior at 99 % (accuracy 0.919-0.925, AUC 0.975-0.977 vs 0.921 / 0.9765) |
 | Retrained model at gene level | non-inferior on the partial evidence (fold 6, unfiltered configs, 2 test sets) |

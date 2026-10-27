@@ -18,7 +18,19 @@ ORIGINAL_HELP = "Use the original miRAW paper weights (fetched from S3 on first 
 
 
 def _run(
-    cfg_file, input_file, model, original_weights, finder, filters, output_dir, name, workers, backend, limit, evaluate
+    cfg_file,
+    input_file,
+    model,
+    original_weights,
+    finder,
+    filters,
+    output_dir,
+    name,
+    workers,
+    backend,
+    limit,
+    evaluate,
+    vienna_bin=None,
 ):
     from pymiraw.config import PredictConfig, load_config, resolve_model_path
     from pymiraw.evaluation.metrics import gene_level_metrics
@@ -35,6 +47,7 @@ def _run(
         "backend": backend,
         "filters": list(filters) if filters else None,
         "original_weights": True if original_weights else None,
+        "vienna_bin": vienna_bin,
     }
     base.update({k: v for k, v in overrides.items() if v is not None})
     cfg = PredictConfig(**base)
@@ -45,6 +58,7 @@ def _run(
         "finder": cfg.finder,
         "filters": cfg.filters,
         "backend": cfg.backend,
+        "backend_args": {"bin_dir": cfg.vienna_bin} if cfg.vienna_bin else {},
         "max_site_length": cfg.max_site_length,
         "seed_alignment_offset": cfg.seed_alignment_offset,
         "cache_dir": cfg.cache_dir,
@@ -76,9 +90,26 @@ def predict(
     workers: int = typer.Option(None),
     backend: str = typer.Option(None, help="bindings | cli"),
     limit: int = typer.Option(None, help="Only the first N pairs."),
+    vienna_bin: str = typer.Option(
+        None, "--vienna-bin", help="Folder with RNAcofold/RNAfold for --backend cli (e.g. the pymiraw-ref env bin)."
+    ),
 ):
     """Predict miRNA-gene targets."""
-    _run(config, input_file, model, original_weights, finder, filter, output_dir, name, workers, backend, limit, False)
+    _run(
+        config,
+        input_file,
+        model,
+        original_weights,
+        finder,
+        filter,
+        output_dir,
+        name,
+        workers,
+        backend,
+        limit,
+        False,
+        vienna_bin,
+    )
 
 
 @app.command()
@@ -94,9 +125,26 @@ def evaluate(
     workers: int = typer.Option(None),
     backend: str = typer.Option(None),
     limit: int = typer.Option(None),
+    vienna_bin: str = typer.Option(
+        None, "--vienna-bin", help="Folder with RNAcofold/RNAfold for --backend cli (e.g. the pymiraw-ref env bin)."
+    ),
 ):
     """Predict and compare against the Positive_Negative labels (TP/FP/TN/FN, accuracy, F1...)."""
-    _run(config, input_file, model, original_weights, finder, filter, output_dir, name, workers, backend, limit, True)
+    _run(
+        config,
+        input_file,
+        model,
+        original_weights,
+        finder,
+        filter,
+        output_dir,
+        name,
+        workers,
+        backend,
+        limit,
+        True,
+        vienna_bin,
+    )
 
 
 @data_app.command("pull")
@@ -153,6 +201,9 @@ def parity(
     cache_dir: str = typer.Option(None),
     workers: int = typer.Option(None),
     tolerance: float = typer.Option(0.03, help="Allowed |mean diff| for accuracy and F1."),
+    vienna_bin: str = typer.Option(
+        None, "--vienna-bin", help="Folder with RNAcofold/RNAfold for --backend cli (e.g. the pymiraw-ref env bin)."
+    ),
 ):
     """Gate 1: reproduce the paper's GlobalSummary with the original weights."""
     from pymiraw.config import resolve_model_path
@@ -162,7 +213,17 @@ def parity(
     ks = range(int(lo), int(hi or lo) + 1)
     cfgs = [c for c in CONFIGS if not config_filter or config_filter in f"{c[0]}|{c[1]}"]
     weights = resolve_model_path("original" if original_weights else model)
-    ours = run_parity(test_dir, weights, output_dir, ks, cfgs, backend, cache_dir, workers)
+    ours = run_parity(
+        test_dir,
+        weights,
+        output_dir,
+        ks,
+        cfgs,
+        backend,
+        cache_dir,
+        workers,
+        backend_args={"bin_dir": vienna_bin} if vienna_bin else None,
+    )
     cmp = compare_with_paper(ours, tolerance)
     cmp.index = [f"{DISPLAY[i.split('|')[0]]} {i.split('|')[1]}" for i in cmp.index]
     typer.echo(cmp.round(3).to_string())

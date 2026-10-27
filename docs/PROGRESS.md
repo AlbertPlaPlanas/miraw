@@ -71,6 +71,15 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (01:00): **The port is bit-exact with the original ViennaRNA version.** Created `environment-reference.yml`
+  (`pymiraw-ref`: ViennaRNA 2.2.5 + OpenJDK 8). First 64 pairs of balanced set 0, `miRAW` NF, original weights
+  (`scripts/viennarna_version_check.py`): with the 2.2.5 CLI backend **100 % of pairs have identical PosSites/NegSites and
+  identical scores (max |diff| 0.00000)** vs the paper's recorded output; with the 2.7.2 bindings 68.8 % identical counts
+  (76.6 % identical PosSites), gene call identical in 100 %, max |score diff| 0.00018. So the residual differences in the
+  benchmark come only from ViennaRNA 2.2 -> 2.7 energy changes, not from porting errors. New test
+  `test_exact_match_with_the_original_viennarna_version` (marker `reference`, skips without `pymiraw-ref`). 110 tests pass; lint clean.
+  Not done: running the original `miRAW.jar` itself as an oracle (the paper's recorded outputs serve as the oracle instead).
+
 * 2026-10-28 (00:10): Added training smoke tests (learning, reproducibility, checkpoint round-trip, collapse guard, and a
   test-only conv model trained through the same stack = the extension seam), `docs/extending.md`, README status table.
   Tests: 109 pass with the original weights, 105 pass + 4 skip without (CI scenario; weight tests now skip immediately instead of

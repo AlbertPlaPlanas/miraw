@@ -101,3 +101,30 @@ def test_unpack_archive_flattens_and_filters(tmp_path):
     assert (out / "NetworkModel" / "bestModel.bin").is_file()
     assert (out / "Data" / "TestData" / "balanced10" / "a.csv").is_file()
     assert not (out / "Data" / "Other").exists()
+
+
+def test_vienna_bin_reaches_the_pipeline_config(monkeypatch, tmp_path):
+    """--vienna-bin must become backend_args.bin_dir (the README promises an exact-reproduction recipe)."""
+    from typer.testing import CliRunner
+
+    from pymiraw import cli
+    from pymiraw.prediction import pipeline
+
+    seen = {}
+
+    def fake_predict(input_file, cfg, workers=None, limit=None):
+        seen.update(cfg)
+        return []
+
+    f = tmp_path / "w.bin"
+    f.write_bytes(b"x")
+    inp = tmp_path / "in.tsv"
+    inp.write_text("miRNA\tgene_name\tEnsemblId\tMature_mirna_transcript\t3UTR_transcript\n")
+    monkeypatch.setattr(pipeline, "predict_file", fake_predict)
+    monkeypatch.setenv(ORIGINAL_WEIGHTS_ENV, str(f))
+    args = ["predict", str(inp), "--original-weights", "--output-dir", str(tmp_path / "o"), "--name", "x"]
+    r = CliRunner().invoke(cli.app, [*args, "--backend", "cli", "--vienna-bin", "/opt/ref/bin"])
+    assert r.exit_code == 0, r.output
+    assert seen["backend"] == "cli" and seen["backend_args"] == {"bin_dir": "/opt/ref/bin"}
+    seen.clear()
+    assert CliRunner().invoke(cli.app, args).exit_code == 0 and seen["backend_args"] == {}

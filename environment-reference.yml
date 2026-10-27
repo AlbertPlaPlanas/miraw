@@ -1,0 +1,10 @@
+# Parity oracle environment: the ViennaRNA version closest to what miRAW was built against, plus a Java 8
+# runtime to run the original miRAW.jar. Only needed to reproduce the "exact" Gate 1 comparison.
+name: pymiraw-ref
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+dependencies:
+  - viennarna=2.2.5
+  - openjdk=8

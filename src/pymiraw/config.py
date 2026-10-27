@@ -27,6 +27,7 @@ class PredictConfig(BaseModel):
     max_site_length: int = 40
     seed_alignment_offset: int = 5
     backend: str = "bindings"
+    vienna_bin: str | None = None  # folder with RNAcofold/RNAfold for backend "cli" (e.g. the 2.2.5 reference env)
     cache_dir: str | None = None
     workers: int | None = None
 

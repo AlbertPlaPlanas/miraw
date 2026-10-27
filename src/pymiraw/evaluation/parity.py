@@ -36,6 +36,7 @@ def run_parity(
     workers=None,
     max_site_length=40,
     seed_alignment_offset=5,
+    backend_args=None,
 ):
     """Returns a DataFrame with our metrics per (config, set). Resumable: finished runs are reused."""
     out_dir = Path(out_dir)
@@ -50,6 +51,7 @@ def run_parity(
                     finder=finder,
                     filters=FILTERS[flt],
                     backend=backend,
+                    backend_args=backend_args or {},
                     cache_dir=cache_dir,
                     max_site_length=max_site_length,
                     seed_alignment_offset=seed_alignment_offset,
