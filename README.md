@@ -1,8 +1,9 @@
 # pyMIRAW
 
-> **Work in progress.** The pipeline and the training stack are implemented and tested, but the
-> benchmark that shows parity with the paper is still running. Do not treat results from this repo
-> as validated yet. Current status: [docs/PROGRESS.md](docs/PROGRESS.md).
+> **Work in progress.** The pipeline and the training stack are implemented and tested. Parity with the
+> paper is confirmed on the first balanced test set (all 10 configurations within 0.005 of the published
+> accuracy and F1); the rest of the benchmark is still running, so treat the results as preliminary.
+> Current status: [docs/PROGRESS.md](docs/PROGRESS.md).
 
 Python/PyTorch reimplementation of **miRAW** ([Pla, Zhong & Rayner, PLoS Comput Biol 2018](https://pmc.ncbi.nlm.nih.gov/articles/PMC6067737/)),
 a deep-learning miRNA-target predictor. The original is Java/DL4J
@@ -56,8 +57,25 @@ Site finders: `miRAW` (paper 6-1:10), `Personalized;0;9;7` (7-1:10), `Personaliz
 
 ```bash
 pymiraw parity data/original/Data/TestData/balanced10 --output-dir runs/parity     # hours, uses all cores
-pymiraw train  data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary --orientation old-default --seeds 3
+pymiraw train  data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary --orientation old-default --seeds 3 \
+    --no-shuffle --val-fraction 0 --max-epochs 10     # the original training regime
 ```
+
+Adding a new architecture (CNN, RNN, Transformer): see [docs/extending.md](docs/extending.md).
+
+## Status of the parity checks (see docs/PROGRESS.md for details)
+
+| Check | State |
+|---|---|
+| Imported original weights reproduce the paper's fold-6 accuracy | exact (0.935143) |
+| Pipeline vs paper, balanced test set 0, 10 configurations | all within 0.005 accuracy/F1 (tolerance 0.03) |
+| Pipeline vs paper, test sets 1-9 | running |
+| Retrained model vs the paper's own fold models (site level, folds 0-8) | non-inferior at 99 % (accuracy 0.919-0.925, AUC 0.975-0.977 vs 0.921 / 0.9765) |
+| Retrained model at gene level | non-inferior on the partial evidence (fold 6, unfiltered configs, 2 test sets) |
+
+The retrained models only reproduce the paper when trained like the original: the released training
+files alternate labels and the original read them in file order, never shuffled (`--no-shuffle`).
+Retrained models are **not** the default; `--original-weights` is.
 
 ## Commands
 
@@ -65,7 +83,8 @@ pymiraw train  data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary --orientat
 |---|---|
 | `pymiraw predict / evaluate` | gene-level predictions (and TP/FP/TN/FN, accuracy, F1 when labels are given) |
 | `pymiraw parity <balanced10 dir>` | compare with the paper's published table |
-| `pymiraw train <folds dir>` | cross-validate on the released folds; `--orientation old-default\|natural` |
+| `pymiraw train <folds dir>` | cross-validate on the released folds; `--orientation old-default\|natural`, `--no-shuffle --val-fraction 0` = paper regime |
+| `make gate2` | non-inferiority report of the retrained models vs the paper |
 | `pymiraw model import-dl4j a.bin b.pt` | convert a DL4J model |
 | `pymiraw data unpack-archive` | unpack the original weights/data from `PLOSComb.7z` |
 

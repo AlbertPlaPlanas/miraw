@@ -27,6 +27,12 @@ packages = ["src/pymiraw"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+filterwarnings = [
+  "ignore:.*treespec.*",
+  "ignore:.*does not have many workers.*",
+  "ignore:.*multi-threaded, use of fork.*:DeprecationWarning",
+  "ignore:.*xlrd engine.*",
+]
 pythonpath = ["src"]
 markers = [
   "slow: long-running tests",

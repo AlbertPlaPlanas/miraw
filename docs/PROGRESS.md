@@ -71,6 +71,12 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (00:10): Added training smoke tests (learning, reproducibility, checkpoint round-trip, collapse guard, and a
+  test-only conv model trained through the same stack = the extension seam), `docs/extending.md`, README status table.
+  Tests: 109 pass with the original weights, 105 pass + 4 skip without (CI scenario; weight tests now skip immediately instead of
+  waiting for S3 credential retries); ruff check and format clean. Pytest warnings from third-party deprecations are filtered
+  in `pyproject.toml`. Gate 1 benchmark still running (see `ls runs/parity | wc -l`, 100 = done).
+
 * 2026-10-27 (23:30): **Gate 2 rule changed to non-inferiority at 99 % one-sided confidence** (owner decision; margins
   0.01 accuracy/F1, 0.005 AUC are my proposal, adjustable constants in `pymiraw/evaluation/noninferiority.py`).
   `scripts/gate2_report.py` on the committed results (folds 0-8 site level; fold-6 models, 5 NF configs, sets 0-1 gene level):
