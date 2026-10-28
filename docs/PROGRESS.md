@@ -84,7 +84,12 @@ Plan and decisions: [PLAN.md](PLAN.md).
     ViennaRNA 2.7.2 from PyPI), run outside the repo with no data: predictions on the 24 example pairs identical to the
     pre-refactor baseline; demo training AUC 0.9272 (same as the source tree on CPU); `pymiraw --help` works.
   * Retraining (`verify_gates.py site`): the 27 old-default models (folds 0-8 x seeds 0-2, paper regime) are **bit-identical**
-    to the committed `runs/train_paperRegime_old-default/*.pt` (max |dw| = 0).
+    to the committed `runs/train_paperRegime_old-default/*.pt` (max |dw| = 0); all 54 runs (both orientations) have the
+    committed confusion counts (`runs/verify/results_retrained/cv_paper_regime.csv`).
+  * Custom architectures and spawned workers (macOS/Windows): each worker now imports the module of the model's class (a
+    spawned worker imports only pyMIRAW, so even a class in an importable module failed before); a class that exists only in
+    a notebook/`__main__` is predicted in-process with a warning when workers are not forked. Tests: real spawn run, fallback.
+    140 tests pass.
   * Running: `scripts/verify_gates.py gate1 gene report` (Gate 1 from a fresh sites folder, then all 19 gene-level model runs, diffed
     against `docs/results/`) and `scripts/verify_gates.py site` (retraining, paper regime); logs `runs/verify/{pipeline,site}.log`.
   * Tutorial notebook `notebooks/pymiraw_tutorial.ipynb` (quick start, configuration, training/custom weights/architectures).

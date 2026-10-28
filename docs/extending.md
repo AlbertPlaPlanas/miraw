@@ -34,9 +34,11 @@ The registration must have run before a saved model of this type is loaded. For 
 pyMIRAW, put it in `src/pymiraw/models/` and import it from `src/pymiraw/models/__init__.py` (without that
 import the registry is empty; this bit us once). In your own code, import the module that defines it first.
 
-Prediction runs in worker processes. On Linux they are forked and see every registered model, including one
-defined in a notebook. Where processes are spawned (macOS, Windows), define the class in an importable
-module, or predict with `workers=1`.
+Prediction runs in worker processes, and each one rebuilds the model from its saved file. Each worker
+imports the module that defines the model's class, so a class in any importable module works in parallel
+everywhere. A class defined in a notebook cell or a script's `__main__` cannot be imported. On Linux it still
+works, because the workers are forked copies of the notebook. Where workers are spawned (macOS, Windows),
+pyMIRAW predicts in the notebook's own process instead, with a warning: the results are the same, only slower.
 
 ## 2. Train it
 

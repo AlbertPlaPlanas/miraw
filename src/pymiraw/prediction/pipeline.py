@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import importlib
+import importlib.util
 import json
 import logging
+import multiprocessing
 import os
+import sys
 import tempfile
+import warnings
 from collections.abc import Iterable
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
@@ -159,10 +164,27 @@ def _rows(df: pd.DataFrame) -> list[tuple]:
 _WORKER: Predictor | None = None
 
 
-def _init_worker(cfg: PredictConfig, model_path: str, opening_cache: dict | None) -> None:
+def _init_worker(cfg: PredictConfig, model_path: str, opening_cache: dict | None, model_module: str) -> None:
     global _WORKER
     torch.set_num_threads(1)
+    if model_module not in sys.modules:  # a spawned worker: import the module that registers the architecture
+        importlib.import_module(model_module)
     _WORKER = Predictor.from_config(cfg, Model.load(model_path), opening_cache)
+
+
+def _mp_context():
+    """The multiprocessing context of the worker pool (the platform default: fork on Linux before Python 3.14)."""
+    return multiprocessing.get_context()
+
+
+def _workers_can_build(model: Model) -> bool:
+    """Can worker processes rebuild this model's architecture? Forked workers inherit every registered class;
+    spawned ones (macOS, Windows, forkserver) must import it, which fails for a class defined in a notebook
+    or a script's ``__main__``."""
+    module = type(model.network).__module__
+    if _mp_context().get_start_method() == "fork":
+        return True
+    return module not in ("__main__", "__mp_main__") and importlib.util.find_spec(module) is not None
 
 
 def _predict_row(predictor: Predictor, row: tuple) -> PairResult:
@@ -215,18 +237,28 @@ def predict_pairs(
     workers = max(1, min(workers or cfg.workers or os.cpu_count() or 1, len(rows)))
     opening_cache = opening.energy if opening is not None else None
     bar = {"total": len(rows), "disable": not progress, "unit": "pair", "desc": "pyMIRAW"}
+    loaded = model or Model.load(cfg.model)
+    if workers > 1 and not _workers_can_build(loaded):
+        warnings.warn(
+            f"{type(loaded.network).__name__} is defined in the notebook/script itself, which worker processes cannot "
+            "import on this platform: predicting in this process instead (same results, slower). Define the class in "
+            "a .py module and import it to run in parallel.",
+            stacklevel=2,
+        )
+        workers = 1
     if workers == 1:
-        predictor = Predictor.from_config(cfg, model or Model.load(cfg.model), opening_cache)
+        predictor = Predictor.from_config(cfg, loaded, opening_cache)
         with single_thread():
             results = [_predict_row(predictor, r) for r in tqdm(rows, **bar)]
     else:
         with tempfile.TemporaryDirectory() as tmp:
             if model is None:
-                model_path = Model.load(cfg.model).source
+                model_path = loaded.source
             else:  # an in-memory model reaches the worker processes through a temporary artefact
                 model_path = str(Model(model.network, model.encoder, model.meta).save(Path(tmp) / "model.pt"))
-            init = (cfg, model_path, opening_cache)
-            with ProcessPoolExecutor(workers, initializer=_init_worker, initargs=init) as ex:
+            init = (cfg, model_path, opening_cache, type(loaded.network).__module__)
+            pool = ProcessPoolExecutor(workers, mp_context=_mp_context(), initializer=_init_worker, initargs=init)
+            with pool as ex:
                 results = list(tqdm(ex.map(_run_row, rows, chunksize=1), **bar))
     if store is not None:
         for i in missing:  # save what was just computed so the next run can skip it

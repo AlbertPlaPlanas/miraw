@@ -121,3 +121,60 @@ def test_train_from_site_sequences_and_save_load_predict(tmp_path, few):
     assert torch.equal(model.network.site_score(x), again.network.site_score(x))
     preds = pymiraw.predict(few.head(1), path, workers=1, progress=False)
     assert preds.model == str(path) and preds.config.model == str(path)
+
+
+def _spawn(monkeypatch):
+    import multiprocessing
+
+    from pymiraw.prediction import pipeline
+
+    monkeypatch.setattr(pipeline, "_mp_context", lambda: multiprocessing.get_context("spawn"))
+
+
+def test_spawned_workers_import_a_custom_architecture_module(few, monkeypatch):
+    """macOS/Windows start workers by spawning: they must import the module that registers the class."""
+    from pymiraw.encoding.onehot import OneHotFlat
+    from tests.unit.custom_arch import SpawnLinear
+
+    torch.manual_seed(0)
+    model = pymiraw.Model(SpawnLinear(), OneHotFlat())
+    in_process = pymiraw.predict(few.head(2), model, workers=1, progress=False)
+    _spawn(monkeypatch)
+    spawned = pymiraw.predict(few.head(2), model, workers=2, progress=False)
+    np.testing.assert_array_equal(spawned.genes.Prediction.to_numpy(), in_process.genes.Prediction.to_numpy())
+
+
+def test_notebook_defined_architecture_falls_back_to_one_process_when_spawning(few, monkeypatch):
+    from pymiraw.encoding.onehot import OneHotFlat
+    from tests.unit.custom_arch import SpawnLinear
+
+    class NotebookNet(SpawnLinear):  # what a class typed into a notebook cell looks like to the workers
+        pass
+
+    NotebookNet.__module__ = "__main__"
+    torch.manual_seed(0)
+    model = pymiraw.Model(NotebookNet(), OneHotFlat())
+    expected = pymiraw.predict(few.head(2), model, workers=1, progress=False)
+    _spawn(monkeypatch)
+    with pytest.warns(UserWarning, match="NotebookNet is defined in the notebook"):
+        got = pymiraw.predict(few.head(2), model, workers=2, progress=False)
+    np.testing.assert_array_equal(got.genes.Prediction.to_numpy(), expected.genes.Prediction.to_numpy())
+
+
+def test_forked_workers_need_no_import(monkeypatch):
+    import multiprocessing
+
+    from pymiraw.encoding.onehot import OneHotFlat
+    from pymiraw.prediction import pipeline
+    from tests.unit.custom_arch import SpawnLinear
+
+    class NotebookNet(SpawnLinear):
+        pass
+
+    NotebookNet.__module__ = "__main__"
+    model = pymiraw.Model(NotebookNet(), OneHotFlat())
+    monkeypatch.setattr(pipeline, "_mp_context", lambda: multiprocessing.get_context("fork"))
+    assert pipeline._workers_can_build(model)
+    monkeypatch.setattr(pipeline, "_mp_context", lambda: multiprocessing.get_context("spawn"))
+    assert not pipeline._workers_can_build(model)
+    assert pipeline._workers_can_build(pymiraw.load_model())  # built-in architectures always work
