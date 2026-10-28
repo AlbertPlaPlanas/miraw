@@ -8,9 +8,15 @@ a deep-learning miRNA-target predictor. The original is Java/DL4J
 > weights pyMIRAW reproduces the paper's benchmark; retrained models give comparable results and are not the default.
 > See [3. Status](#3-status).
 
+**If you use pyMIRAW, please cite the original miRAW paper** (see [Citation](#citation)):
+
+> Pla A, Zhong X, Rayner S (2018). miRAW: A deep learning-based approach to predict microRNA targets by analyzing whole
+> microRNA transcripts. *PLoS Computational Biology* 14(7): e1006185. https://doi.org/10.1371/journal.pcbi.1006185
+
 ## Contents
 
 1. [How pyMIRAW compares to the original miRAW](#1-how-pymiraw-compares-to-the-original-miraw)
+   * [How miRAW predicts targets](#how-miraw-predicts-targets)
    * [Results](#results)
    * [ViennaRNA version and exact reproduction](#viennarna-version-and-exact-reproduction)
    * [Why retraining does not give the same weights](#why-retraining-does-not-give-the-same-weights)
@@ -21,10 +27,27 @@ a deep-learning miRNA-target predictor. The original is Java/DL4J
    * [Command line](#command-line)
    * [Python library](#python-library)
 3. [Status](#3-status)
+4. [Citation](#citation)
 
 ---
 
 ## 1. How pyMIRAW compares to the original miRAW
+
+### How miRAW predicts targets
+
+pyMIRAW implements the same pipeline as miRAW. The network sees the whole mature miRNA and a 40-nt candidate site, not
+only the seed:
+
+```mermaid
+flowchart LR
+    A["miRNA + 3'UTR<br/>(unified TSV)"] --> B["Candidate sites<br/>40-nt windows co-folded with<br/>the miRNA (ViennaRNA RNAcofold),<br/>kept if the seed region binds"]
+    B --> C["Encoding<br/>miRNA 30 nt + site 40 nt,<br/>one-hot (280 inputs)"]
+    C --> D["Site score<br/>MLP: p(target) − p(no target),<br/>in [−1, +1]"]
+    D --> E["Accessibility filter (optional)<br/>positive sites with ΔG_open > 10<br/>(ViennaRNA RNAfold) are removed"]
+    E --> F["Gene prediction<br/>highest site score;<br/>target if > 0"]
+```
+
+The site finders differ only in the seed rule (miRAW 6-1:10, Personalized 7-1:10 / 7-2:10, PITA, TargetScan).
 
 ### Results
 
@@ -38,8 +61,18 @@ a deep-learning miRNA-target predictor. The original is Java/DL4J
   F1 within 0.005) and pass the non-inferiority test of Gate 2 (99 % one-sided bound within 0.02 accuracy/F1 and 0.005 AUC).
   Individual models, ours and the paper's alike, differ by up to about ±0.03 in gene-level accuracy from fold to fold.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/gate1_parity-dark.svg">
+  <img alt="Dot plot: for each of the 10 configurations, the difference between pyMIRAW and the paper in mean accuracy and F1 is within ±0.005, well inside the ±0.02 tolerance band." src="docs/figures/gate1_parity-light.svg">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/gate2_folds-dark.svg">
+  <img alt="Two dot plots over the 9 cross-validation folds: site-level and gene-level accuracy of pyMIRAW's retrained model and of the paper's own model for each fold; both scatter over the same range, around the published value." src="docs/figures/gate2_folds-light.svg">
+</picture>
+
 The gates and their exact rules are in [docs/PLAN.md](docs/PLAN.md) (section 6); the result files are in
-[docs/results/](docs/results/).
+[docs/results/](docs/results/). The figures are drawn from them by `scripts/make_readme_figures.py`.
 
 ### ViennaRNA version and exact reproduction
 
@@ -250,6 +283,30 @@ benchmark runner, the training stack (paper regime, any registered architecture)
 ReservedZones filters (unused by the paper), profiling, PyPI packaging and the `v1.0.0` release.
 
 Detailed log, numbers and commands: [docs/PROGRESS.md](docs/PROGRESS.md). Design and decisions: [docs/PLAN.md](docs/PLAN.md).
+
+---
+
+## Citation
+
+pyMIRAW is a reimplementation; the method is miRAW's. If you use pyMIRAW, please cite the original paper:
+
+> Pla A, Zhong X, Rayner S (2018). miRAW: A deep learning-based approach to predict microRNA targets by analyzing whole
+> microRNA transcripts. *PLoS Computational Biology* 14(7): e1006185. https://doi.org/10.1371/journal.pcbi.1006185
+
+```bibtex
+@article{pla2018miraw,
+  author  = {Pla, Albert and Zhong, Xiangfu and Rayner, Simon},
+  title   = {{miRAW}: A deep learning-based approach to predict {microRNA} targets by analyzing whole {microRNA} transcripts},
+  journal = {PLoS Computational Biology},
+  year    = {2018},
+  volume  = {14},
+  number  = {7},
+  pages   = {e1006185},
+  doi     = {10.1371/journal.pcbi.1006185}
+}
+```
+
+GitHub's "Cite this repository" button uses [CITATION.cff](CITATION.cff), which points to the same paper.
 
 ---
 

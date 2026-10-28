@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "pyMIRAW reimplements miRAW. If you use it, please cite the original miRAW paper (preferred citation below)."
+title: "pyMIRAW: Python/PyTorch reimplementation of miRAW"
+type: software
+license: MIT
+authors:
+  - family-names: Pla Planas
+    given-names: Albert
+preferred-citation:
+  type: article
+  title: "miRAW: A deep learning-based approach to predict microRNA targets by analyzing whole microRNA transcripts"
+  authors:
+    - family-names: Pla
+      given-names: Albert
+    - family-names: Zhong
+      given-names: Xiangfu
+    - family-names: Rayner
+      given-names: Simon
+  journal: "PLoS Computational Biology"
+  year: 2018
+  volume: 14
+  issue: 7
+  start: e1006185
+  doi: "10.1371/journal.pcbi.1006185"
