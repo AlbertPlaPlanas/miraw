@@ -3,7 +3,7 @@
 Read this first in a new session (see CLAUDE.md). Update it after every meaningful step.
 Plan and decisions: [PLAN.md](PLAN.md).
 
-## Status (2026-10-27)
+## Status (2026-10-28)
 
 | Phase | State |
 |---|---|
@@ -11,8 +11,8 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all means within 0.005) |
-| 4 Training stack | **done**; Gate 2 at statistical parity (old-default kept as orientation); not promoted |
-| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, final Gate 1 (sets 6-9) / Gate 2 (AE configs, all sets) |
+| 4 Training stack | **done**; Gate 2 non-inferiority PASS for old-default on site level (folds 0-8) and gene level (fold 6, all 10 sets, 10 configs); not promoted |
+| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, Gate 2 with other folds' models and AE configs for seeds 1-2 |
 
 ## Gate results so far
 
@@ -70,6 +70,16 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-28 (10:20): **Gate 2 gene level, `old-default` retrained fold-6 models on all 10 balanced sets.** Finished runs
+  (`runs/gene_full.sh`): seed 0 on all 10 configs (NF and AE), seeds 1-2 on the 5 NF configs, 100 (config, set) cells.
+  Mean over cells (ours - paper): **accuracy +0.0059, F1 +0.0047**; F1 >= paper in 70/100 cells; mean per config within
+  -0.002..+0.023 F1 (largest: `miRAW` NF +0.023 accuracy / +0.013 F1). Non-inferiority (`scripts/gate2_report.py`, rows rewritten
+  by `scripts/gene_level_compare.py runs docs/results/gene_level_fold6_retrained.csv`, now 230 runs): **OVERALL PASS**, all 8 rows;
+  old-default gene accuracy lower bound +0.0036, F1 +0.0020 (slack 0.012-0.014). Fragile passes unchanged: old-default site
+  accuracy (slack 0.0001) and AUC (0.0005). `natural` remains at sets 0-1 NF only (orientation decision unchanged).
+  Still not promoted: original weights stay the default. This machine has no `pymiraw` conda env (analysis ran in a scratch venv with
+  pandas/scipy, `PYTHONPATH=src`); recreate with `conda env create -f environment.yml` before running anything heavy.
 
 * 2026-10-28 (02:30): **GATE 1 PASSED: all 100 runs (10 configurations x 10 balanced test sets), original weights, ViennaRNA 2.7.2
   bindings, vs the paper's GlobalSummary** (`docs/results/gate1_comparison.csv`, per-run rows `docs/results/gate1_all_sets.csv`,

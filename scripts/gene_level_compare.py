@@ -1,6 +1,6 @@
 """Gene-level comparison of retrained fold models with the paper (same pipeline, same balanced sets).
 
-Usage: python scripts/gene_level_compare.py runs   (reads runs/gene_<orientation>_f6_s<seed>/<config>_<set>/metrics.json)
+Usage: python scripts/gene_level_compare.py runs [out.csv]   (optionally writes the per-run rows; reads runs/gene_<orientation>_f6_s<seed>/<config>_<set>/metrics.json)
 """
 
 import json
@@ -32,6 +32,8 @@ for d in sorted(root.glob("gene_*_f6_s*")):
             }
         )
 ours = pd.DataFrame(rows)
+if len(sys.argv) > 2:  # persist the per-run rows (the committed docs/results file is produced this way)
+    ours.sort_values(["orientation", "seed", "config", "set"]).to_csv(sys.argv[2], index=False)
 ours = ours.merge(paper[["config", "set", "Accuracy", "F1"]], on=["config", "set"], suffixes=("", "_paper"))
 ours["dAcc"], ours["dF1"] = ours.Accuracy - ours.Accuracy_paper, ours.F1 - ours.F1_paper
 print(
