@@ -16,7 +16,7 @@ rows = []
 for d in sorted(root.glob("gene_*_f6_s*")):
     if not d.is_dir():
         continue
-    _, orient, _, seed = d.name.split("_")
+    _, orient, fold, seed = d.name.split("_")  # gene_<orientation>_f<fold>_s<seed>
     for m in d.glob("*/metrics.json"):
         cfg, _, s = m.parent.name.rpartition("_")  # e.g. Personalized_0_9_7_NF_0 -> cfg Personalized_0_9_7_NF
         finder, _, flt = cfg.rpartition("_")
@@ -25,6 +25,7 @@ for d in sorted(root.glob("gene_*_f6_s*")):
         rows.append(
             {
                 "orientation": orient,
+                "fold": int(fold[1:]),
                 "seed": seed,
                 "config": f"{finder}|{flt}",
                 "set": int(s),
