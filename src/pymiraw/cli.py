@@ -211,10 +211,6 @@ def model_import(src: str, dest: str):
     typer.echo(f"wrote {dest}")
 
 
-if __name__ == "__main__":
-    app()
-
-
 @app.command()
 def parity(
     test_dir: str = typer.Argument(..., help="Folder with randomLeveragedTestSplit_{0..9}.csv (paper balanced sets)."),
@@ -294,3 +290,7 @@ def train(
     df.to_csv(Path(output_dir) / f"cv_{orientation}.csv", index=False)  # one file per orientation per output_dir
     typer.echo(df.round(4).to_string(index=False))
     typer.echo(json.dumps(compare_with_paper(df), indent=2, default=float))
+
+
+if __name__ == "__main__":
+    app()

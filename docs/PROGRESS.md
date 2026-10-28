@@ -71,6 +71,13 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (11:40): Fixed `python -m pymiraw.cli`: the `__main__` guard sat above the `parity`/`train` commands, so they were
+  not registered via `-m` (the installed `pymiraw` entry point was fine). **Running (Gate 2, other folds):** `runs/gene_folds.sh`
+  = `pymiraw parity ... --model-path --model runs/train_paperRegime_old-default/old-default_f{f}_s0.pt --sets 0-9 --sites-dir runs/sites`
+  for f in 0-5,7,8 (seed 0, all 10 configs); progress in `runs/gene_folds.progress`, logs `runs/gene_folds_f*.log`, results in
+  `runs/gene_old-default_f{f}_s0/`. Sites are folded once (fold 0) and reused by the later folds. Next: add a fold column to
+  `scripts/gene_level_compare.py` / `gate2_report.py`, rerun the report, update README TL;DR.
+
 * 2026-10-28 (11:30): **Saved candidate sites (`--sites-dir`).** New `src/pymiraw/sites/store.py` (`SiteStore`): the sites found with
   ViennaRNA are written per pair as parquet shards (`sites-<id>.parquet`, append-only, atomic) and loaded on later runs, so only the
   network/filters run again. Key = sha1(backend name+version, finder class+all settings, miRNA, 3'UTR); pairs without sites are stored
