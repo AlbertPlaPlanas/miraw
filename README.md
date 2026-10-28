@@ -25,7 +25,8 @@ a deep-learning miRNA-target predictor. The original is Java/DL4J
    * [What is the same and what differs](#what-is-the-same-and-what-differs)
 2. [Using pyMIRAW](#2-using-pymiraw)
    * [Installation](#installation)
-   * [Original data and weights](#original-data-and-weights)
+   * [Tutorial notebook](#tutorial-notebook)
+   * [Weights and data](#weights-and-data)
    * [Predicting targets](#predicting-targets)
    * [Output and scores](#output-and-scores)
    * [Choosing the ViennaRNA version](#choosing-the-viennarna-version)
@@ -108,7 +109,7 @@ initialisation, 10 epochs, training file order. The remaining differences are pl
 
 | | original miRAW | pyMIRAW |
 |---|---|---|
-| Network | DL4J MLP 280 → 400-350-300-150-100-100-50-50 → 2 | same architecture in PyTorch; DL4J `.bin` checkpoints load directly |
+| Network | DL4J MLP 280 → 400-350-300-150-100-100-50-50 → 2 | same architecture in PyTorch; the original weights ship with the package; DL4J `.bin` checkpoints load directly |
 | Site finders | miRAW (6-1:10), Personalized, PITA, TargetScan | all four: `miRAW` (6-1:10), `Personalized;<start>;<size>;<min pairs>` (e.g. `Personalized;0;9;7` = 7-1:10, `Personalized;1;9;7` = 7-2:10), `PITA`, `TargetScan` (or `TS`) |
 | Filters | AccessibilityEnergy, SpecificZones, ReservedZones | AccessibilityEnergy (the one the paper used); the other two are not ported |
 | RNA folding | ViennaRNA 2.2 command-line tools | ViennaRNA 2.7 Python bindings by default; any version's command-line tools |
@@ -123,36 +124,61 @@ initialisation, 10 epochs, training file order. The remaining differences are pl
 ### Installation
 
 ```bash
+pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"
+```
+
+This installs everything needed to predict and to train, including ViennaRNA 2.7 and the original miRAW weights.
+Extras: `pymiraw[data]` (unpack the paper archive), `pymiraw[notebook]` (JupyterLab, matplotlib).
+
+Contributors use the conda environment, which pins every version:
+
+```bash
 conda env create -f environment.yml        # or: conda-lock install -n pymiraw conda-lock.yml
 conda activate pymiraw
 pip install -e . --no-deps
-pre-commit install                         # contributors: secret guards, once per clone
+pre-commit install                         # secret guards, once per clone
 make test
 ```
 
-### Original data and weights
+### Tutorial notebook
 
-The original weights, the paper's test sets and the cross-validation folds come from the authors' data archive.
-Download it once and unpack the parts pyMIRAW uses into `data/original/`:
+[notebooks/pymiraw_tutorial.ipynb](notebooks/pymiraw_tutorial.ipynb) walks through everything below with runnable
+examples:
+
+* a quick start for non-programmers (predict, read the scores, save the results);
+* configuration (site finders, filters, YAML files, the command line, ViennaRNA versions, faster reruns);
+* training in the paper's regime, saving and reusing your own weights, other training settings and a custom architecture.
+
+It runs on the bundled example data, without downloads.
+
+### Weights and data
+
+The original miRAW weights are **bundled with the package**: `model="original"` (the default everywhere) uses them,
+with nothing to download or configure. They are a bit-exact conversion of the paper's `NetworkModel/bestModel.bin`
+(checked by the tests). Set `PYMIRAW_ORIGINAL_WEIGHTS=/path/to/file` to use another copy (`.pt` or DL4J `.bin`).
+
+Also bundled: 24 example pairs and 5,000 labelled training sites (`pymiraw.example_pairs()`, `pymiraw.example_sites()`),
+and the paper's published results used by the benchmarks.
+
+Only the benchmarks and full-size training need the authors' data archive (1 GB). Download it once and unpack the parts
+pyMIRAW uses into `data/original/`:
 
 ```bash
-curl -L -o PLOSComb.7z https://bitbucket.org/bipous/miraw_data/raw/master/PLOSComb.7z   # ~1 GB
-pymiraw data unpack-archive PLOSComb.7z
+curl -L -o PLOSComb.7z https://bitbucket.org/bipous/miraw_data/raw/master/PLOSComb.7z
+pymiraw data unpack-archive PLOSComb.7z      # needs pymiraw[data]
 ```
 
 ```
-data/original/NetworkModel/bestModel.bin                         # original miRAW weights
 data/original/Data/TestData/balanced10/                          # the paper's 10 balanced test sets
 data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary/          # released CV folds
-data/original/Results/GlobalSummary.xls                          # published results
+data/original/NetworkModel/bestModel.bin                         # the original weights (DL4J), source of the bundled copy
+data/original/ResultsCV/VeryDeepXENT14K_e10/Set<k>/bestModel.bin # the paper's 9 cross-validation fold models
 ```
-
-To keep the weights elsewhere, set `PYMIRAW_ORIGINAL_WEIGHTS=/path/to/bestModel.bin`.
 
 ### Predicting targets
 
 The input is the miRAW *unified file*: a TSV with the columns `miRNA, gene_name, EnsemblId, [Positive_Negative,]
-Mature_mirna_transcript, 3UTR_transcript` (example: `tests/fixtures/paper_pairs.tsv`).
+Mature_mirna_transcript, 3UTR_transcript` (example: `src/pymiraw/resources/example_pairs.tsv`).
 
 ```bash
 pymiraw predict  pairs.tsv --name my_run                                  # original weights (the default)
@@ -168,7 +194,7 @@ pymiraw predict  -c run.yaml                                              # opti
 * `--sites-dir DIR`: save the ViennaRNA results on the first run and reuse them on later runs, with any model;
   `--require-sites` fails instead of folding.
 
-`pymiraw <command> --help` lists every option.
+`pymiraw <command> --help` lists every option; `python -m pymiraw` is the same command.
 
 ### Output and scores
 
@@ -220,43 +246,58 @@ New architectures (CNN, RNN, Transformer) plug into the same training and predic
 
 ### Python library
 
-Run the pipeline on a unified file:
+Everything the command line does is one function call. The original weights are the default model:
 
 ```python
-from pymiraw.prediction.pipeline import predict_file, results_frame
-from pymiraw.storage import original_weights_path
+import pymiraw
 
-cfg = {
-    "model": str(original_weights_path()),     # or a .pt artefact from `pymiraw train`
-    "finder": "miRAW",
-    "filters": ["AccessibilityEnergy;10"],     # [] for no filter
-    "backend": "bindings",
-    "max_site_length": 40,
-    "seed_alignment_offset": 5,
-    # optional: "sites_dir": "runs/sites" to save and reuse the ViennaRNA results
-}
-results = predict_file("pairs.tsv", cfg, workers=4)
-df = results_frame(results)    # GeneName, miRNA, Prediction, HighestPredVal, PosSites, NegSites, RemovedSites, ...
+preds = pymiraw.predict("pairs.tsv")              # or a DataFrame, or [(mirna_seq, utr_seq), ...]
+preds.genes                                        # one row per pair: Prediction in [-1, 1], IsTarget, PosSites...
+preds.sites                                        # every candidate site and its score
+preds.metrics()                                    # when the input has labels: TP/FP/TN/FN, accuracy, F1...
+preds.save("runs/my_run")                          # the original miRAW output files
+
+pymiraw.predict("pairs.tsv", finder="PITA", filters="AccessibilityEnergy;10", sites_dir="runs/sites")
+pymiraw.predict("pairs.tsv", backend="cli", vienna_bin="/opt/conda/envs/pymiraw-ref/bin")   # ViennaRNA 2.2.5
+
+r = pymiraw.predict_pair(mirna_seq, utr_seq)       # a single pair
+r.prediction, r.is_target, [(s.start, s.end, s.score) for s in r.sites]
 ```
 
-Predict a single miRNA-3'UTR pair without files:
+Training returns a `Model` that can be saved and used wherever the original weights are:
 
 ```python
-from pymiraw.folding.base import FoldService
-from pymiraw.folding.vienna_cli import make_backend
-from pymiraw.models.artifact import load_artifact
-from pymiraw.prediction.pipeline import Predictor
-from pymiraw.sites.finders.registry import get_site_finder
-from pymiraw.storage import original_weights_path
-
-model, encoder, _ = load_artifact(original_weights_path())   # .bin (DL4J) or .pt
-backend = make_backend("bindings")    # or make_backend("cli", bin_dir="/path/to/viennarna/bin"); temperature=... for either
-predictor = Predictor(model, encoder, get_site_finder("miRAW"), FoldService(backend))
-
-res = predictor.predict_pair(mirna_sequence, utr_sequence)
-res.prediction                                  # highest site score, in [-1, +1]; > 0 means target
-[(s.start, s.end, s.score) for s in res.sites]  # candidate sites and their scores
+model = pymiraw.train(pymiraw.example_sites("train"), pymiraw.example_sites("test"))  # the paper's regime
+model.meta["metrics"]                                  # test accuracy, AUC, F1...
+model.save("my_model.pt")
+pymiraw.predict("pairs.tsv", "my_model.pt")            # or the Model object itself
+pymiraw.train(sites, config=pymiraw.TrainConfig(loss="nll", site_orientation="natural", max_epochs=30))
+pymiraw.cross_validate("data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary", out_dir="runs/cv")
 ```
+
+`pymiraw.PredictConfig` and `pymiraw.TrainConfig` hold every setting, with the paper's values as defaults (also as
+YAML: `pymiraw.config.load_config("run.yaml")`). `pymiraw.load_model(path)` opens `.pt` and DL4J `.bin` files;
+`Model.score_sites(mirna, sites)` scores site sequences directly.
+
+**Code map** for developers (`src/pymiraw/`):
+
+| Module | Role |
+|---|---|
+| `api.py` | the functions above; start here |
+| `config.py` | `PredictConfig`, `TrainConfig`, YAML and legacy `.properties` files |
+| `prediction/pipeline.py` | `Predictor` (one pair), `predict_pairs` (parallel driver), `Predictions` |
+| `sites/finders/`, `sites/filters/` | candidate-site finders and the accessibility filter (ported from the Java code) |
+| `folding/` | ViennaRNA backends (`bindings`, `cli`) and the fold cache |
+| `encoding/onehot.py` | the one-hot input encoding, including the original's reversed site orientation |
+| `models/` | `SiteClassifier` and the model registry, the miRAW MLP, DL4J import, `Model` artefacts |
+| `training/` | Lightning training loop, losses, released-fold loader, cross-validation |
+| `evaluation/` | metrics, Gate 1 benchmark, Gate 2 non-inferiority test |
+| `resources/` | bundled weights, published results, example data |
+| `cli.py` | the `pymiraw` command |
+
+New architectures plug into the same training and prediction code: [docs/extending.md](docs/extending.md).
+After changes that could affect results, `python scripts/verify_gates.py` re-runs the gates and compares every number
+with the committed results in `docs/results/`.
 
 ---
 

@@ -219,15 +219,15 @@ pyMiraw/
   * CLI: `pymiraw predict|evaluate <input> --original-weights`; YAML: `original_weights: true`
     or `model: original`. It overrides any other `model` value, and **it is also the default
     when no model is given**, so pyMIRAW can never silently run with an untested model.
-  * The weights are `bestModel.bin` of the paper, a DL4J file that is converted to PyTorch at load
-    time (no Java). They are not stored in git (3 MB, over the 1 MB hook limit); they sit at
-    `raw/original/miraw_data/NetworkModel/bestModel.bin` in the S3 bucket, are listed with their
-    sha256 in `data/manifest.yaml`, and are fetched into `~/.cache/pymiraw` on first use
-    (`pymiraw data pull|verify original-weights`).
-  * Offline or without S3 access, set `PYMIRAW_ORIGINAL_WEIGHTS=/path/to/bestModel.bin`.
+  * The weights are `bestModel.bin` of the paper (a DL4J file, MIT). Since 2026-10-28 (owner request: a
+    self-contained package) they are **bundled** as `src/pymiraw/resources/miraw_original.pt` (1.75 MB; the
+    only file exempt from the 1 MB hook), a bit-exact conversion made by `scripts/bundle_original_weights.py`
+    and pinned by sha256 in `pymiraw.resources`. Tests check it against the DL4J file whenever
+    `data/original` exists. Nothing is downloaded; the S3 copy stays as the archive of record.
+  * `PYMIRAW_ORIGINAL_WEIGHTS=/path/to/file` (`.pt` or DL4J `.bin`) overrides the bundled copy.
   * The original weights imply the `old-default` site orientation (the importer sets it), and
     the run summary prints `weights: original miRAW` so it is visible in every log.
-  * Tests that need the weights are marked `data` and skip cleanly when they are unavailable.
+  * Tests that need the paper archive (`data/original`) are marked `data` and skip cleanly without it.
 * **Site orientation flag:** `encoding.site_orientation` takes `old-default` or `natural` (see
   decision 8 in §1).
   * `old-default` (alias `reversed`) is the original behaviour. The site is one-hot encoded

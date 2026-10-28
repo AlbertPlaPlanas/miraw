@@ -31,6 +31,6 @@ jobs:
       - name: lint
         shell: bash -el {0}
         run: ruff check src tests scripts
-      - name: tests (original-weights tests skip without S3)
+      - name: tests (bundled original weights; tests needing the paper archive skip)
         shell: bash -el {0}
         run: pytest -m "not slow and not acceptance" -q
