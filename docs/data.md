@@ -52,8 +52,8 @@ The weights are looked up in this order: `$PYMIRAW_ORIGINAL_WEIGHTS`,
 
   A pair is reused only if the miRNA, the 3'UTR, all finder settings and the folding backend and version
   are identical (they are hashed into its key); otherwise it is computed and added as a new shard. The
-  directory can be copied between machines. The model score and the accessibility filter are not stored
-  (the filter folds the 200 nt UTR window itself). Unlike `--cache-dir`, which memoises raw window
+  directory can be copied between machines. The accessibility energies ΔG_open are saved too (`opening-*.parquet`; they depend only on the UTR and
+  the site position, so they are shared by all finders, models and thresholds). Model scores are not stored. Unlike `--cache-dir`, which memoises raw window
   folds, this stores the final candidate sites and is independent of the folding library at load time.
 * `runs/` holds benchmark and training output and is gitignored.
 

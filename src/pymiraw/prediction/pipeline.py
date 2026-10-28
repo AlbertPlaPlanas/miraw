@@ -20,7 +20,7 @@ from pymiraw.models.base import SiteClassifier
 from pymiraw.sites.candidate import CandidateSite
 from pymiraw.sites.filters.accessibility import get_filter
 from pymiraw.sites.finders.registry import get_site_finder
-from pymiraw.sites.store import SiteStore, backend_id, pair_key
+from pymiraw.sites.store import OpeningStore, SiteStore, backend_id, pair_key, utr_key
 
 log = logging.getLogger(__name__)
 
@@ -87,6 +87,7 @@ def _init_worker(cfg: dict) -> None:
     model, encoder, _ = load_artifact(cfg["model"])
     backend = make_backend(cfg["backend"], **cfg.get("backend_args", {}))
     folds = FoldService(backend, cfg.get("cache_dir"))
+    folds.opening_cache = dict(cfg.get("opening_cache") or {})  # saved ΔG_open values (read-only here)
     finder = get_site_finder(cfg["finder"], cfg["max_site_length"], cfg["seed_alignment_offset"])
     filters = [get_filter(f) for f in cfg.get("filters", [])]
     _WORKER = Predictor(model, encoder, finder, folds, filters)
@@ -119,9 +120,9 @@ def predict_file(input_file: str | Path, cfg: dict, workers: int | None = None, 
         (r.gene_name, r.EnsemblId, r.miRNA, r.mirna_seq, r.utr, int(r.Positive_Negative) if has_label else None)
         for r in df.itertuples()
     ]
-    store, keys = None, []
+    store, keys, opening = None, [], None
     if cfg.get("sites_dir"):
-        store, keys = _open_store(cfg, rows)
+        store, keys, opening, cfg = _open_store(cfg, rows)
     # attach the saved sites (or None = compute them) as the last element of each row
     saved = [store.get(k) for k in keys] if store is not None else [None] * len(rows)
     rows = [(*r, sites) for r, sites in zip(rows, saved, strict=True)]
@@ -146,15 +147,34 @@ def predict_file(input_file: str | Path, cfg: dict, workers: int | None = None, 
         for i in missing:  # save what was just computed so the next run can skip it
             store.add(keys[i], results[i].sites)
         store.flush()
+    if opening is not None:
+        _save_opening_energies(opening, cfg, rows, results)
     return results
 
 
-def _open_store(cfg: dict, rows: list[tuple]) -> tuple[SiteStore, list[str]]:
-    """Open the sites directory and compute the store key of every row (needs the backend version)."""
+def _open_store(cfg: dict, rows: list[tuple]):
+    """Open the sites directory for this run: returns (site store, row keys, opening-energy store, cfg).
+
+    Only the pairs of this run are read from disk. The returned cfg carries the saved opening
+    energies to the workers (the accessibility filter reuses them instead of folding).
+    """
     backend = make_backend(cfg["backend"], **cfg.get("backend_args", {}))
     finder = get_site_finder(cfg["finder"], cfg["max_site_length"], cfg["seed_alignment_offset"])
     bid = backend_id(backend)
-    return SiteStore(cfg["sites_dir"]), [pair_key(bid, finder, r[3], r[4]) for r in rows]
+    keys = [pair_key(bid, finder, r[3], r[4]) for r in rows]
+    opening = OpeningStore(cfg["sites_dir"], sorted({utr_key(bid, r[4]) for r in rows}))
+    cfg = {**cfg, "opening_cache": opening.energy, "_backend_id": bid}
+    return SiteStore(cfg["sites_dir"], keys), keys, opening, cfg
+
+
+def _save_opening_energies(opening: OpeningStore, cfg: dict, rows: list[tuple], results: list[PairResult]) -> None:
+    """Save the ΔG_open values the accessibility filter computed in this run (new ones only)."""
+    for row, res in zip(rows, results, strict=True):
+        key = utr_key(cfg["_backend_id"], row[4])
+        for s in res.sites:
+            if "AccessibilityEnergy" in s.properties:
+                opening.add((key, s.start, s.end), s.properties["AccessibilityEnergy"])
+    opening.flush()
 
 
 def results_frame(results: list[PairResult]) -> pd.DataFrame:

@@ -71,6 +71,13 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (15:50): **Everything model-independent is now precomputed and reused.** (1) `--sites-dir` also stores the accessibility
+  energies ΔG_open (`opening-*.parquet`, key = backend/version + UTR hash + start + end): they depend only on UTR and position, so they are shared
+  across finders, models and AE thresholds (the filter was the bottleneck of the Gate 2 fold runs: ~7 min per AE run even with saved sites).
+  (2) The site store reads only the pairs of the current run and builds site objects lazily. Timing, 100 pairs of set 0, `miRAW` + AE;10, 8 workers:
+  cold 49 s, warm 3.3 s, warm with AE;5 3.1 s (before: every AE run refolded). Tests: 108 unit tests pass. The Gate 2 fold job was restarted on
+  the new code (finished runs are kept). Remaining model-independent cost: none (window co-folds = sites, UTR/open-gap folds = ΔG_open).
+
 * 2026-10-28 (14:30): **Licence is MIT** (owner decision: they are the author of the original miRAW and relicense it). `LICENSE` was already MIT;
   fixed the remaining GPL-3.0 mentions in `pyproject.toml`, `README.md`, `docs/data.md`, `data/manifest.yaml`. The upstream Bitbucket repos still say GPL until the
   owner changes them there. Third-party data (e.g. TarBase) keeps its own terms.

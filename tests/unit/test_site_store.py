@@ -97,3 +97,63 @@ def test_predict_file_reuses_saved_sites(tmp_path, monkeypatch):
 
     with pytest.raises(LookupError):  # different finder settings -> not saved -> --require-sites fails
         predict_file(inp, {**cfg, "finder": "Personalized;1;9;7", "require_sites": True}, workers=1)
+
+
+def test_store_loaded_with_keys_only_reads_those_pairs(tmp_path):
+    store = SiteStore(tmp_path)
+    for k in ("a", "b", "c"):
+        store.add(k, find())
+    store.flush()
+    part = SiteStore(tmp_path, keys=["b"])
+    assert len(part) == 1 and part.get("b") and part.get("a") is None
+
+
+def test_accessibility_energies_are_saved_and_reused(tmp_path, monkeypatch):
+    """Run 2 (other threshold, same sites_dir) folds nothing: sites and ΔG_open both come from disk."""
+    import torch
+
+    from pymiraw.encoding.onehot import OneHotFlat
+    from pymiraw.folding.base import Fold
+    from pymiraw.models.base import SiteClassifier
+    from pymiraw.prediction import pipeline
+
+    backends = []
+
+    class Counting(FakeBackend):
+        def __init__(self):
+            super().__init__(lambda s, m: duplex_fold(s, m, 8, -9.0))
+            self.opens = 0
+
+        def fold_with_open_gap(self, seq, a, b):
+            self.opens += 1
+            return Fold(seq, "." * len(seq), -10.0 + 4.0)  # ΔG_open = 4 for every site
+
+        def fold(self, seq):
+            return Fold(seq, "." * len(seq), -10.0)
+
+    def fake_make_backend(kind, **kw):
+        backends.append(Counting())
+        return backends[-1]
+
+    class Positive(SiteClassifier):
+        def forward(self, x):
+            return torch.tensor([[-1.0, 1.0]]).repeat(len(x), 1)
+
+    monkeypatch.setattr(pipeline, "make_backend", fake_make_backend)
+    monkeypatch.setattr(pipeline, "load_artifact", lambda path: (Positive(), OneHotFlat(30, 40), {}))
+    inp = tmp_path / "pairs.tsv"
+    inp.write_text(f"miRNA\tgene_name\tEnsemblId\tMature_mirna_transcript\t3UTR_transcript\ng\tG\tE\t{MIRNA}\t{UTR}\n")
+    cfg = {"model": "x", "finder": "miRAW", "backend": "bindings", "max_site_length": 40,
+           "seed_alignment_offset": 5, "sites_dir": str(tmp_path / "sites"),
+           "filters": ["AccessibilityEnergy;10"]}  # fmt: skip
+
+    first = predict_file(inp, cfg, workers=1)
+    assert first[0].sites and sum(b.opens for b in backends) > 0
+    assert list((tmp_path / "sites").glob("opening-*.parquet"))
+
+    backends.clear()
+    # a stricter threshold removes every site (ΔG_open = 4 > 3) using only the saved energies
+    second = predict_file(inp, {**cfg, "filters": ["AccessibilityEnergy;3"]}, workers=1)
+    assert sum(b.opens for b in backends) == 0 and sum(b.calls for b in backends) == 0
+    assert second[0].removed_sites == len(second[0].sites) > 0 and second[0].prediction == 0.0
+    assert first[0].removed_sites == 0

@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from pymiraw.sites.store import utr_key
+
 
 @dataclass(frozen=True)
 class Fold:
@@ -43,6 +45,15 @@ class FoldService:
         self.cache_dir = Path(cache_dir) if cache_dir else None
         self._cofold: dict[tuple[str, str], Fold] = {}
         self._fold: dict[str, Fold] = {}
+        # saved accessibility energies {(utr_key, start, end): ΔG_open}, see pymiraw.sites.store.OpeningStore
+        self.opening_cache: dict[tuple[str, int, int], float] = {}
+        self._utr_hash: tuple[str, str] = ("", "")  # (utr, its key): the key is reused for all sites of a pair
+
+    def opening_key(self, utr: str, start: int, end: int) -> tuple[str, int, int]:
+        """Key of the opening energy of ``utr[start:end]`` under this backend and version."""
+        if self._utr_hash[0] != utr:
+            self._utr_hash = (utr, utr_key(f"{self.backend.name}-{self.backend.version}", utr))
+        return self._utr_hash[1], start, end
 
     def cofold(self, site: str, mirna: str) -> Fold:
         key = (site, mirna)

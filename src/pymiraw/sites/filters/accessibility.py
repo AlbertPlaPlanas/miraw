@@ -30,7 +30,10 @@ class AccessibilityEnergyFilter:
 
     def evaluate(self, site: CandidateSite, utr: str, folds: FoldService) -> bool:
         """Return True if the site passes. Marks it filtered otherwise."""
-        energy = site_opening_energy(folds, utr, site.start, site.end)
+        key = folds.opening_key(utr, site.start, site.end)
+        energy = folds.opening_cache.get(key)  # saved or already computed in this process
+        if energy is None:
+            energy = folds.opening_cache[key] = site_opening_energy(folds, utr, site.start, site.end)
         site.properties["AccessibilityEnergy"] = energy
         if energy > self.threshold:
             site.filtered = True
