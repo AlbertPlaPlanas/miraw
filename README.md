@@ -116,9 +116,13 @@ pymiraw predict  pairs.tsv --model my_model.pt                                 #
 pymiraw predict  -c run.yaml                                                   # all options from a YAML (or legacy .properties) file
 ```
 
-Each run writes `runs/<name>/targetPredictionOutput.csv` (one row per pair; `Prediction > 0` = target),
-`targetSites.csv` (every candidate site and its score), `config.yaml` and, for `evaluate`, `metrics.json`
-(TP/FP/TN/FN, accuracy, F1, ...).
+Each run writes `runs/<name>/targetPredictionOutput.csv` (one row per pair), `targetSites.csv` (every candidate
+site and its score), `config.yaml` and, for `evaluate`, `metrics.json` (TP/FP/TN/FN, accuracy, F1, ...).
+
+Scores range from -1 to +1. A site's score is p(target) - p(no target) from the network's two outputs, so a score
+above 0 means p(target) > 0.5. A pair's `Prediction` is the highest score among its sites, and **the pair is predicted
+as a target when `Prediction > 0`**. Pairs without candidate sites, and positive sites removed by a filter, score 0
+(not a target). This is the same convention as the original miRAW.
 
 * Site finders (`--finder`): `miRAW` (paper 6-1:10), `Personalized;0;9;7` (7-1:10), `Personalized;1;9;7` (7-2:10), `PITA`, `TS`.
 * Filter (`--filter`, repeatable): `AccessibilityEnergy;10` (removes positive sites whose opening energy is above +10).
@@ -188,7 +192,7 @@ from pymiraw.storage import original_weights_path
 model, encoder, _ = load_artifact(original_weights_path())   # .bin (DL4J) or .pt
 predictor = Predictor(model, encoder, get_site_finder("miRAW"), FoldService(make_backend("bindings")))
 res = predictor.predict_pair(mirna_sequence, utr_sequence)
-res.prediction           # gene-level score in [-1, 1]; > 0 means target
+res.prediction           # highest site score, in [-1, +1]; > 0 means target
 [(s.start, s.end, s.score) for s in res.sites]               # candidate sites and their scores
 ```
 
