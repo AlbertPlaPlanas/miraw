@@ -82,7 +82,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
   `py7zr` missing in it); ruff clean. **Verified with real ViennaRNA 2.7.2** (pip `ViennaRNA` in the scratch venv) and the original weights on
   `tests/fixtures/paper_pairs.tsv` (6 pairs): `pymiraw evaluate ... --original-weights --sites-dir S` run 1 folds and writes one shard,
   run 2 loads it (4.7 s -> 2.5 s, mostly start-up), and `targetPredictionOutput.csv` and `targetSites.csv` are byte-identical to a run without
-  `--sites-dir`; `--require-sites` with another finder raises. Not yet timed on a full balanced set. Docs: `docs/data.md`.
+  `--sites-dir`; `--require-sites` with another finder raises. Timing, balanced set 0, first 100 pairs, `miRAW` NF, 8 workers: cold store 103.6 s, warm store 2.9 s, outputs identical. README now has a "Status" section (done / remaining) to keep current (rule added to CLAUDE.md). Docs: `docs/data.md`.
 
 * 2026-10-28 (10:20): **Gate 2 gene level, `old-default` retrained fold-6 models on all 10 balanced sets.** Finished runs
   (`runs/gene_full.sh`): seed 0 on all 10 configs (NF and AE), seeds 1-2 on the 5 NF configs, 100 (config, set) cells.

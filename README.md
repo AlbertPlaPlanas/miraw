@@ -76,20 +76,34 @@ pymiraw train  data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary --orientat
 
 Adding a new architecture (CNN, RNN, Transformer): see [docs/extending.md](docs/extending.md).
 
-## Status of the parity checks (see docs/PROGRESS.md for details)
+## Status
 
-| Check | State |
+What it takes to bring the original miRAW to Python, and where that stands (details and numbers:
+[docs/PROGRESS.md](docs/PROGRESS.md)). Last updated 2026-10-28.
+
+**Done**
+
+| Part | State |
 |---|---|
-| Imported original weights reproduce the paper's fold-6 accuracy | exact (0.935143) |
-| Pipeline vs paper, balanced test set 0, 10 configurations | all within 0.005 accuracy/F1 (tolerance 0.03) |
-| Pipeline vs paper with the original ViennaRNA version (2.2.5, `environment-reference.yml`) | exact: identical site counts and scores on 64 pairs |
+| Original weights (DL4J `bestModel.bin`) imported to PyTorch | exact: fold-6 accuracy 0.935143 as in the paper |
+| Candidate-site finders (miRAW, 7-1:10, 7-2:10, PITA, TargetScan), accessibility filter, encoding, gene scoring | ported |
 | Pipeline vs paper, all 10 test sets x 10 configurations | **passed**: every configuration within 0.003 accuracy / 0.005 F1 of the published mean (tolerance 0.03) |
-| Retrained model vs the paper's own fold models (site level, folds 0-8) | non-inferior at 99 % (accuracy 0.919-0.925, AUC 0.975-0.977 vs 0.921 / 0.9765) |
-| Retrained model at gene level | non-inferior on the partial evidence (fold 6, unfiltered configs, 2 test sets) |
+| Pipeline with the original ViennaRNA 2.2.5 (`environment-reference.yml`) | exact: identical site counts and scores on 64 pairs |
+| Saved candidate sites (`--sites-dir`) | done: 100 pairs take 104 s cold and 3 s warm, identical output |
+| Training stack, orientation experiment | done; retrained models are non-inferior to the paper's (site level folds 0-8; gene level fold 6, all 10 sets and configs) but are **not** the default |
+| Docs: extending, data, lockfile | done |
+
+**Remaining**
+
+1. Gate 2 with the other folds' retrained models, and the filtered (AE) configs for more than one seed.
+2. Run the original `miRAW.jar` as an oracle on sampled pairs (the paper's recorded outputs stand in for it today).
+3. Gate 3: the full unbalanced test set (`Evaluate_14K_FULL`).
+4. Not ported: the `SpecificZones` / `ReservedZones` filters (unused by the paper's configs) and rebuilding the dataset from raw TarBase/miRTarBase/Ensembl (out of scope for v1).
+5. Profiling, packaging for PyPI and the `v1.0.0` release.
 
 The retrained models only reproduce the paper when trained like the original: the released training
 files alternate labels and the original read them in file order, never shuffled (`--no-shuffle`).
-Retrained models are **not** the default; `--original-weights` is.
+`--original-weights` stays the default.
 
 ## Commands
 
@@ -100,6 +114,7 @@ Retrained models are **not** the default; `--original-weights` is.
 | `pymiraw train <folds dir>` | cross-validate on the released folds; `--orientation old-default\|natural`, `--no-shuffle --val-fraction 0` = paper regime |
 | `make gate2` | non-inferiority report of the retrained models vs the paper |
 | `pymiraw model import-dl4j a.bin b.pt` | convert a DL4J model |
+| `--sites-dir DIR` (on predict/evaluate/parity) | save the ViennaRNA binding sites on the first run and reuse them later; `--require-sites` fails instead of folding |
 | `pymiraw data unpack-archive` | unpack the original weights/data from `PLOSComb.7z` |
 
 Credentials are never stored in the repository: `.secrets.md` is gitignored and guarded by
