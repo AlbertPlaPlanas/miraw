@@ -80,6 +80,11 @@ Plan and decisions: [PLAN.md](PLAN.md).
     `python -m pymiraw`. Scoring always single-threaded (bit-identical across paths). Lightning and ViennaRNA are core dependencies.
   * Equivalence: the 11 CLI runs (example pairs x 10 configs + paper pairs) before/after the refactor give **byte-identical**
     outputs; Gate 0 re-run: fold-6 accuracy 0.9351428571, paper fold models re-scored identical. 137 tests pass.
+  * Self-contained check: the wheel (1.8 MB, includes `resources/`) installed with pip into a new venv (torch 2.15 CPU,
+    ViennaRNA 2.7.2 from PyPI), run outside the repo with no data: predictions on the 24 example pairs identical to the
+    pre-refactor baseline; demo training AUC 0.9272 (same as the source tree on CPU); `pymiraw --help` works.
+  * Retraining (`verify_gates.py site`): the 27 old-default models (folds 0-8 x seeds 0-2, paper regime) are **bit-identical**
+    to the committed `runs/train_paperRegime_old-default/*.pt` (max |dw| = 0).
   * Running: `scripts/verify_gates.py gate1 gene report` (Gate 1 from a fresh sites folder, then all 19 gene-level model runs, diffed
     against `docs/results/`) and `scripts/verify_gates.py site` (retraining, paper regime); logs `runs/verify/{pipeline,site}.log`.
   * Tutorial notebook `notebooks/pymiraw_tutorial.ipynb` (quick start, configuration, training/custom weights/architectures).
