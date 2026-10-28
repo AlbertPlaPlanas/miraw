@@ -1,4 +1,5 @@
-"""Manifest-driven download/upload of heavy artefacts from/to S3, with sha256 verification."""
+"""Where the original weights are, and the manifest-driven download/upload of the heavy paper data from/to S3
+(developer use; prediction never needs S3), with sha256 verification."""
 
 from __future__ import annotations
 
@@ -10,10 +11,10 @@ import yaml
 
 DEFAULT_MANIFEST = Path(__file__).resolve().parents[2] / "data" / "manifest.yaml"
 ORIGINAL_WEIGHTS_KEY = "original-weights"
-ORIGINAL_WEIGHTS_ENV = "PYMIRAW_ORIGINAL_WEIGHTS"  # point at a local copy to skip S3 entirely
+ORIGINAL_WEIGHTS_ENV = "PYMIRAW_ORIGINAL_WEIGHTS"  # use another copy of the original weights (.pt or DL4J .bin)
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ORIGINAL_DIR = REPO_ROOT / "data" / "original"  # where `pymiraw data unpack-archive` puts the paper data
-LOCAL_WEIGHTS = ORIGINAL_DIR / "NetworkModel" / "bestModel.bin"
+ORIGINAL_DL4J = ORIGINAL_DIR / "NetworkModel" / "bestModel.bin"  # the DL4J source of the bundled weights
 ARCHIVE_URL = "https://bitbucket.org/bipous/miraw_data/raw/master/PLOSComb.7z"
 UNPACK_PATTERNS = (
     "PLOSComb/NetworkModel/bestModel.bin",
@@ -67,8 +68,8 @@ def pull(key: str, manifest: dict | None = None, force: bool = False) -> Path:
                 out.write(chunk)
     except (PermissionError, OSError) as e:
         raise RuntimeError(
-            f"cannot read {uri}: {e}\nOn the dev machine run the command through "
-            "scripts/with-s3-creds.sh, or set PYMIRAW_ORIGINAL_WEIGHTS to a local copy."
+            f"cannot read {uri}: {e}\nOn the dev machine run the command through scripts/with-s3-creds.sh; "
+            "elsewhere download PLOSComb.7z and run `pymiraw data unpack-archive`."
         ) from e
     if sha256_file(dest) != entry["sha256"]:
         dest.unlink()
@@ -105,17 +106,15 @@ def unpack_archive(archive: str | Path, dest: str | Path = ORIGINAL_DIR) -> Path
 
 
 def original_weights_path() -> Path:
-    """Path of the original miRAW paper weights (DL4J ``bestModel.bin``).
-
-    Order: ``$PYMIRAW_ORIGINAL_WEIGHTS``, then ``data/original/NetworkModel/bestModel.bin`` (created by
-    ``pymiraw data unpack-archive``), then the checksum-verified download from the project mirror.
-    """
+    """Path of the original miRAW paper weights: ``$PYMIRAW_ORIGINAL_WEIGHTS`` if set, else the copy bundled
+    with the package (``pymiraw/resources/miraw_original.pt``, converted bit-exactly from the paper's DL4J
+    ``bestModel.bin``). Nothing is downloaded."""
     override = os.environ.get(ORIGINAL_WEIGHTS_ENV)
     if override:
         p = Path(override)
         if not p.is_file():
             raise FileNotFoundError(f"{ORIGINAL_WEIGHTS_ENV}={override} does not exist")
         return p
-    if LOCAL_WEIGHTS.is_file():
-        return LOCAL_WEIGHTS
-    return pull(ORIGINAL_WEIGHTS_KEY)
+    from pymiraw import resources
+
+    return resources.original_weights()

@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+import tempfile
+import warnings
 
 import lightning as L
 import numpy as np
 import torch
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 
+from pymiraw.config import TrainConfig
 from pymiraw.encoding.onehot import OneHotFlat
 from pymiraw.evaluation.metrics import gene_level_metrics, roc_auc
 from pymiraw.models.base import build_model
@@ -17,27 +19,13 @@ from pymiraw.training.data import loader, split_validation
 from pymiraw.training.module import SiteModule
 
 logging.getLogger("lightning.pytorch").setLevel(logging.ERROR)
+logging.getLogger("lightning.fabric").setLevel(logging.ERROR)
+# Lightning advice that does not apply here (small in-memory datasets, CPU or GPU by choice)
+_QUIET = (".*GPU available but not used.*", ".*does not have many workers.*", ".*val_dataloader.*", ".*treespec.*")
 
 
 class CollapsedModelError(RuntimeError):
     """The trained model predicts a single class for (almost) every input."""
-
-
-@dataclass
-class TrainConfig:
-    model: str = "mlp"
-    model_params: dict = field(default_factory=dict)
-    loss: str = "xent"
-    lr: float = 0.005
-    momentum: float = 0.9
-    batch_size: int = 50
-    max_epochs: int = 10
-    patience: int = 0  # 0 = no early stopping
-    val_fraction: float = 0.1
-    shuffle: bool = True  # False = file order every epoch, as the original (DL4J) trained
-    site_orientation: str = "old-default"
-    seed: int = 0
-    accelerator: str = "auto"
 
 
 def predict_scores(model, x: np.ndarray) -> np.ndarray:
@@ -59,9 +47,14 @@ def _build(cfg: TrainConfig, in_dim: int):
     return build_model(cfg.model, **params)
 
 
-def train_fold(cfg: TrainConfig, xtr, ytr, xte, yte, workdir):
-    """Returns (best model on validation loss, metrics on the test fold, encoder)."""
-    L.seed_everything(cfg.seed, workers=True)
+def train_fold(cfg: TrainConfig, xtr, ytr, xte=None, yte=None, workdir=None):
+    """Train on ``xtr, ytr`` (encoded features, labels). Returns (the best checkpoint: lowest validation loss,
+    or lowest training loss when ``val_fraction`` is 0; its metrics on the test set, empty without one;
+    the encoder). ``workdir`` holds the checkpoint (a temporary folder if not given)."""
+    if workdir is None:
+        with tempfile.TemporaryDirectory() as tmp:
+            return train_fold(cfg, xtr, ytr, xte, yte, tmp)
+    L.seed_everything(cfg.seed, workers=True, verbose=False)
     # val_fraction=0: train on everything and keep the epoch with the lowest training loss (the paper's regime)
     if cfg.val_fraction > 0:
         x_fit, y_fit, x_val, y_val = split_validation(xtr, ytr, cfg.val_fraction, cfg.seed)
@@ -72,24 +65,30 @@ def train_fold(cfg: TrainConfig, xtr, ytr, xte, yte, workdir):
     module = SiteModule(model, cfg.loss, cfg.lr, cfg.momentum)
     ckpt = ModelCheckpoint(dirpath=workdir, monitor=monitor, mode="min", save_top_k=1, filename="best")
     callbacks = [ckpt] + ([EarlyStopping(monitor, patience=cfg.patience)] if cfg.patience else [])
-    trainer = L.Trainer(
-        max_epochs=cfg.max_epochs,
-        accelerator=cfg.accelerator,
-        devices=1,
-        callbacks=callbacks,
-        enable_progress_bar=False,
-        enable_model_summary=False,
-        logger=False,
-        deterministic=False,
-    )
-    val_loader = loader(x_val, y_val, 1024, False) if x_val is not None else None
-    trainer.fit(module, loader(x_fit, y_fit, cfg.batch_size, cfg.shuffle, cfg.seed), val_loader)
+    with warnings.catch_warnings():
+        for pattern in _QUIET:
+            warnings.filterwarnings("ignore", message=pattern)
+        trainer = L.Trainer(
+            max_epochs=cfg.max_epochs,
+            accelerator=cfg.accelerator,
+            devices=1,
+            callbacks=callbacks,
+            enable_progress_bar=False,
+            enable_model_summary=False,
+            logger=False,
+            deterministic=False,
+        )
+        val_loader = loader(x_val, y_val, 1024, False) if x_val is not None else None
+        trainer.fit(module, loader(x_fit, y_fit, cfg.batch_size, cfg.shuffle, cfg.seed), val_loader)
     best = SiteModule.load_from_checkpoint(ckpt.best_model_path, model=_build(cfg, xtr.shape[1]), loss=cfg.loss)
     net = best.model.cpu().eval()
+    encoder = OneHotFlat(site_len=(xtr.shape[1] - 120) // 4, site_orientation=cfg.site_orientation)
+    if xte is None:
+        check_not_collapsed(predict_scores(net, xtr))
+        return net, {"epochs_run": int(trainer.current_epoch)}, encoder
     scores = predict_scores(net, xte)
     check_not_collapsed(scores)
     metrics = gene_level_metrics(yte, scores)  # same confusion definitions; site-level here
     metrics["AUC"] = roc_auc(yte, scores)
     metrics["epochs_run"] = int(trainer.current_epoch)
-    encoder = OneHotFlat(site_len=(xtr.shape[1] - 120) // 4, site_orientation=cfg.site_orientation)
     return net, metrics, encoder

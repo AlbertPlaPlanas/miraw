@@ -11,6 +11,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
+from pymiraw import resources  # noqa: E402
+
 root = Path(__file__).resolve().parents[1]
 out = root / "docs/figures"
 res = root / "docs/results"
@@ -97,11 +99,11 @@ def gate1(t, name):
 def gate2(t, name):
     cv = pd.read_csv(res / "cv_paper_regime.csv")
     site_ours = cv[(cv.orientation == "old-default") & ~cv.collapsed].groupby("fold").Accuracy.mean()
-    site_paper = pd.read_csv(root / "tests/fixtures/paper_cv_xent_models_rescored.csv").set_index("fold").Accuracy
+    site_paper = resources.paper_cv_models().set_index("fold").Accuracy
     g = pd.read_csv(res / "gene_level_retrained.csv")
     gene_ours = g[g.orientation == "old-default"].groupby("fold").Accuracy.mean()
     gene_paper = pd.read_csv(res / "gene_level_paper_folds.csv").groupby("fold").Accuracy.mean()
-    published = pd.read_csv(root / "tests/fixtures/paper_global_summary.csv").Accuracy.mean()
+    published = resources.paper_global_summary().Accuracy.mean()
 
     fig, axes = plt.subplots(1, 2, figsize=(9.6, 4.3), facecolor=t["surface"])
     panels = (

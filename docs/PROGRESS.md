@@ -68,6 +68,22 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (23:30): **Branch `restructure-api`: developer-friendly API, self-contained package (in progress).**
+  * Original weights bundled as `src/pymiraw/resources/miraw_original.pt` (1.75 MB, bit-exact conversion of `NetworkModel/bestModel.bin`
+    by `scripts/bundle_original_weights.py`, sha256 pinned in `pymiraw.resources`); `original_weights_path()` = `$PYMIRAW_ORIGINAL_WEIGHTS`
+    or the bundled file, no S3. Paper reference tables moved from `tests/fixtures/` to `pymiraw/resources/`; example data bundled
+    (`example_pairs.tsv`, 24 pairs; `example_sites.tsv.gz`, 5000 fold-6 sites decoded to sequences, re-encoding exact; `scripts/make_example_data.py`).
+  * New `pymiraw.api` (lazy top-level exports): `predict`, `predict_pair`, `evaluate`, `load_model`, `train`, `cross_validate`,
+    `encode_sites`; `Model` (network + encoder + meta), `Predictions` (`.genes`, `.sites`, `.metrics()`, `.save()`); inputs as file,
+    DataFrame or `(mirna, utr)` tuples; progress bar. `TrainConfig` moved to `pymiraw.config` (+ `TrainConfig.paper()`);
+    `PredictConfig` rejects unknown keys, accepts `Path`s; `backend_args` replaced by `vienna_bin`. CLI is a thin layer over the API;
+    `python -m pymiraw`. Scoring always single-threaded (bit-identical across paths). Lightning and ViennaRNA are core dependencies.
+  * Equivalence: the 11 CLI runs (example pairs x 10 configs + paper pairs) before/after the refactor give **byte-identical**
+    outputs; Gate 0 re-run: fold-6 accuracy 0.9351428571, paper fold models re-scored identical. 137 tests pass.
+  * Running: `scripts/verify_gates.py gate1 gene report` (Gate 1 from a fresh sites folder, then all 19 gene-level model runs, diffed
+    against `docs/results/`) and `scripts/verify_gates.py site` (retraining, paper regime); logs `runs/verify/{pipeline,site}.log`.
+  * Tutorial notebook `notebooks/pymiraw_tutorial.ipynb` (quick start, configuration, training/custom weights/architectures).
+
 * 2026-10-28 (23:00): README figures and citation. New: a pipeline flow diagram (Mermaid), two charts (light/dark SVGs in
   `docs/figures/`, drawn from the committed result files by `scripts/make_readme_figures.py`; byte-reproducible; needs matplotlib,
   not a package dependency): Gate 1 per-configuration differences vs the ±0.02 tolerance, and Gate 2 per-fold site/gene accuracy

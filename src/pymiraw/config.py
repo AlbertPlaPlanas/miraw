@@ -1,24 +1,32 @@
-"""Run configuration (YAML or the original ``.properties`` files) and model resolution."""
+"""Run configurations: prediction (YAML or the original ``.properties`` files) and training."""
 
 from __future__ import annotations
 
+import os
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 ORIGINAL_MODEL_ALIASES = {"original", "original-weights", "miraw-paper-xent"}
 
 
 class PredictConfig(BaseModel):
-    """What the ``predict`` / ``evaluate`` commands need.
+    """Everything a prediction run needs; the defaults are the paper's ``miRAW-6-1:10`` configuration.
 
     ``model`` is a path to a ``.pt`` artefact or a DL4J ``.bin``, or the literal ``original`` to
     use the original miRAW paper weights (``original_weights: true`` is the same switch).
+    ``finder``: ``miRAW`` | ``Personalized;<start>;<size>;<min seed pairs>`` | ``PITA`` | ``TargetScan``.
+    ``filters``: e.g. ``["AccessibilityEnergy;10"]``. ``backend``: ``bindings`` (ViennaRNA Python package)
+    or ``cli`` (ViennaRNA command-line tools, in ``vienna_bin`` or on the PATH). Unknown keys are errors.
+    ``experiment_name``, ``input_file`` and ``output_dir`` are only used by the command line.
     """
 
+    model_config = ConfigDict(extra="forbid")
+
     experiment_name: str = "run"
-    input_file: str
+    input_file: str | None = None
     output_dir: str = "runs"
     model: str = "original"
     original_weights: bool = False
@@ -33,6 +41,11 @@ class PredictConfig(BaseModel):
     require_sites: bool = False  # with sites_dir: fail instead of running ViennaRNA for pairs not saved
     workers: int | None = None
 
+    @field_validator("input_file", "output_dir", "model", "vienna_bin", "cache_dir", "sites_dir", mode="before")
+    @classmethod
+    def _paths_as_text(cls, v):
+        return os.fspath(v) if isinstance(v, os.PathLike) else v
+
     @model_validator(mode="after")
     def _original_flag(self):
         if self.original_weights:
@@ -44,15 +57,40 @@ class PredictConfig(BaseModel):
         return self.model in ORIGINAL_MODEL_ALIASES
 
 
-def resolve_model_path(model: str) -> str:
-    """Turn a config ``model`` value into a loadable file path (fetching original weights)."""
-    if model in ORIGINAL_MODEL_ALIASES:
+def resolve_model_path(model: str | Path) -> str:
+    """Turn a model reference (``original`` or a file path) into a loadable file path."""
+    if str(model) in ORIGINAL_MODEL_ALIASES:
         from pymiraw.storage import original_weights_path
 
         return str(original_weights_path())
     if not Path(model).is_file():
         raise FileNotFoundError(f"model file not found: {model}")
-    return model
+    return str(model)
+
+
+@dataclass
+class TrainConfig:
+    """Training settings. The defaults are the training stack's; the paper's regime is
+    ``TrainConfig.paper()`` (10 epochs in file order, no validation split, best epoch by training loss)."""
+
+    model: str = "mlp"
+    model_params: dict = field(default_factory=dict)
+    loss: str = "xent"
+    lr: float = 0.005
+    momentum: float = 0.9
+    batch_size: int = 50
+    max_epochs: int = 10
+    patience: int = 0  # 0 = no early stopping
+    val_fraction: float = 0.1
+    shuffle: bool = True  # False = file order every epoch, as the original (DL4J) trained
+    site_orientation: str = "old-default"
+    seed: int = 0
+    accelerator: str = "auto"
+
+    @classmethod
+    def paper(cls, **overrides) -> TrainConfig:
+        """The regime of the paper's models (what Gate 2 tests): XENT, Nesterov SGD lr 0.005, batch 50."""
+        return cls(**{"max_epochs": 10, "val_fraction": 0.0, "shuffle": False, **overrides})
 
 
 def load_properties(path: str | Path) -> dict[str, str]:

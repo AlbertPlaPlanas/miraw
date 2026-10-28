@@ -4,25 +4,28 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pymiraw"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python/PyTorch reimplementation of miRAW (Pla et al., PLoS Comput Biol 2018)"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+# Everything needed to predict (original weights bundled) and to train. ViennaRNA 2.7.x is the default
+# folding backend (the gates were run with 2.7.2); other versions can be used through `backend="cli"`.
 dependencies = [
-  "numpy", "pandas", "pyarrow", "scikit-learn", "scipy", "torch",
-  "pydantic>=2", "pyyaml", "typer", "rich", "tqdm", "fsspec", "s3fs",
+  "numpy", "pandas", "pyarrow", "scikit-learn", "scipy", "torch", "lightning>=2.4", "ViennaRNA>=2.7.2,<2.8",
+  "pydantic>=2", "pyyaml", "typer", "tqdm",
 ]
 
 [project.optional-dependencies]
-train = ["lightning>=2.4"]
-dev = ["pytest", "pytest-cov", "pytest-xdist", "hypothesis", "ruff", "mypy"]
+data = ["py7zr", "xlrd", "fsspec", "s3fs"]  # paper archive unpacking, GlobalSummary.xls, the project S3 mirror
+notebook = ["jupyterlab", "matplotlib"]
+dev = ["pytest", "pytest-cov", "pytest-xdist", "hypothesis", "ruff", "mypy", "nbformat", "nbclient", "ipykernel"]
 
 [project.scripts]
 pymiraw = "pymiraw.cli:app"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pymiraw"]
+packages = ["src/pymiraw"]  # includes src/pymiraw/resources (weights, reference tables, examples)
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

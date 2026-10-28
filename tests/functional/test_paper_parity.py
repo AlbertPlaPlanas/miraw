@@ -1,4 +1,4 @@
-"""Functional tests against the original miRAW paper model and results (need the original weights)."""
+"""Functional tests against the original miRAW paper model (bundled) and the paper's results."""
 
 import json
 import os
@@ -9,26 +9,49 @@ import pytest
 import torch
 from typer.testing import CliRunner
 
+from pymiraw import resources
 from pymiraw.cli import app
 from pymiraw.models.artifact import load_artifact
 from pymiraw.models.dl4j_import import load_dl4j
 from pymiraw.prediction.pipeline import predict_file, results_frame
+from pymiraw.storage import sha256_file
+from pymiraw.training.data import load_csv
 
 
-def test_gate0_imported_paper_model_reproduces_paper_cv_accuracy(original_weights, fixtures):
-    """Fold 6 (the paper's 'fold 7') accuracy on the first 500 test sites, pinned from the weights."""
-    model, _ = load_dl4j(original_weights)
+def _site_scores(model, x: np.ndarray) -> np.ndarray:
+    with torch.no_grad():
+        return model.site_score(torch.from_numpy(x)).numpy()
+
+
+def test_bundled_weights_are_the_pinned_file(original_weights):
+    assert original_weights == resources.original_weights()
+    assert sha256_file(original_weights) == resources.ORIGINAL_WEIGHTS_SHA256
+    _, enc, meta = load_artifact(original_weights)
+    assert enc.site_orientation == "old-default" and meta["source_sha256"] == resources.SOURCE_DL4J_SHA256
+
+
+def test_gate0_bundled_model_on_pinned_cv_sites(original_weights, fixtures):
+    """Fold 6 (the paper's 'fold 7') test sites, first 500: 470 correct (all 3500: 0.9351, test below)."""
+    model, _, _ = load_artifact(original_weights)
     d = np.loadtxt(fixtures / "cv_set6_test_head500.csv", delimiter=",", dtype=np.float32)
-    y, x = d[:, 0].astype(int), torch.from_numpy(d[:, 1:])
-    with torch.no_grad():
-        s = model.site_score(x).numpy()
-    acc = ((s > 0) == y).mean()
-    assert acc > 0.90  # paper fold-6 accuracy over all 3500 sites is 0.9351
-    # the same model, round-tripped through the pyMIRAW artefact format, gives identical scores
-    m2, enc, meta = load_artifact(original_weights)
-    assert enc.site_orientation == "old-default" and meta["source"] == "dl4j"
-    with torch.no_grad():
-        assert torch.allclose(m2.site_score(x), torch.from_numpy(s))
+    assert ((_site_scores(model, d[:, 1:]) > 0) == d[:, 0]).sum() == 470
+
+
+def test_gate0_full_fold6_accuracy_equals_the_paper(original_weights, paper_data):
+    """Gate 0: the paper's BestModelEval.txt reports 0.9351428571 on CV fold 6 for this model."""
+    model, _, _ = load_artifact(original_weights)
+    x, y = load_csv(paper_data / "Data/CrossVal/RelaxedPW60_14K_35K/binary/set_6_test.csv")
+    assert ((_site_scores(model, x) > 0) == y).sum() == 3273  # 3273 / 3500 = 0.9351428571
+
+
+def test_bundled_weights_equal_the_paper_dl4j_file(original_weights, paper_data):
+    """The bundled .pt is a bit-exact conversion of NetworkModel/bestModel.bin."""
+    bin_path = paper_data / "NetworkModel/bestModel.bin"
+    assert sha256_file(bin_path) == resources.SOURCE_DL4J_SHA256
+    dl4j, _ = load_dl4j(bin_path)
+    bundled, _, _ = load_artifact(original_weights)
+    a, b = dl4j.state_dict(), bundled.state_dict()
+    assert a.keys() == b.keys() and all(torch.equal(a[k], b[k]) for k in a)
 
 
 @pytest.fixture(scope="module")
@@ -53,8 +76,7 @@ def test_pipeline_matches_paper_results_on_pinned_pairs(paper_cfg, fixtures):
     assert np.abs(got.PosSites.values - exp.PosSites.values).max() <= 1  # ViennaRNA 2.2 vs 2.7 drift
 
 
-def test_cli_original_weights_flag_end_to_end(original_weights, fixtures, tmp_path, monkeypatch):
-    monkeypatch.setenv("PYMIRAW_ORIGINAL_WEIGHTS", str(original_weights))
+def test_cli_original_weights_flag_end_to_end(fixtures, tmp_path):
     r = CliRunner().invoke(
         app,
         [
@@ -77,8 +99,7 @@ def test_cli_original_weights_flag_end_to_end(original_weights, fixtures, tmp_pa
     assert m["TP"] + m["FP"] + m["TN"] + m["FN"] == 6 and m["Accuracy"] >= 0.8
 
 
-def test_cli_default_model_is_the_original_weights(original_weights, fixtures, tmp_path, monkeypatch):
-    monkeypatch.setenv("PYMIRAW_ORIGINAL_WEIGHTS", str(original_weights))
+def test_cli_default_model_is_the_original_weights(fixtures, tmp_path):
     r = CliRunner().invoke(
         app,
         [
@@ -107,7 +128,7 @@ REF_BIN = "/opt/conda/envs/pymiraw-ref/bin"
 def test_exact_match_with_the_original_viennarna_version(paper_cfg, fixtures):
     """With ViennaRNA 2.2.5 (the version miRAW was built against) the port reproduces the published
     per-pair results exactly: same site counts and the same scores."""
-    cfg = {**paper_cfg, "backend": "cli", "backend_args": {"bin_dir": REF_BIN}}
+    cfg = {**paper_cfg, "backend": "cli", "vienna_bin": REF_BIN}
     got = results_frame(predict_file(fixtures / "paper_pairs.tsv", cfg, workers=3))
     exp = pd.read_csv(fixtures / "paper_pairs_expected.tsv", sep="\t")
     assert list(got.PosSites) == list(exp.PosSites) and list(got.NegSites) == list(exp.NegSites)

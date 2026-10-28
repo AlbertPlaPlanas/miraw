@@ -3,7 +3,8 @@
 import pytest
 
 from pymiraw.folding.base import FoldService
-from pymiraw.prediction.pipeline import predict_file
+from pymiraw.models.artifact import Model
+from pymiraw.prediction.pipeline import predict_pairs
 from pymiraw.sites.finders.default import DefaultFinder, PersonalizedFinder
 from pymiraw.sites.store import SiteStore, backend_id, finder_fingerprint, pair_key
 from tests.unit.test_finders import MIRNA, FakeBackend, duplex_fold
@@ -79,24 +80,24 @@ def test_predict_file_reuses_saved_sites(tmp_path, monkeypatch):
     from pymiraw.encoding.onehot import OneHotFlat
 
     monkeypatch.setattr(pipeline, "make_backend", fake_make_backend)
-    monkeypatch.setattr(pipeline, "load_artifact", lambda path: (Const(), OneHotFlat(30, 40), {}))
     inp = tmp_path / "pairs.tsv"
     inp.write_text(f"miRNA\tgene_name\tEnsemblId\tMature_mirna_transcript\t3UTR_transcript\ng\tG\tE\t{MIRNA}\t{UTR}\n")
     cfg = {"model": "x", "finder": "miRAW", "backend": "bindings", "max_site_length": 40,
            "seed_alignment_offset": 5, "sites_dir": str(tmp_path / "sites")}  # fmt: skip
 
-    first = predict_file(inp, cfg, workers=1)
+    model = Model(Const(), OneHotFlat(30, 40))
+    first = predict_pairs(inp, cfg, model, workers=1)
     calls_first = sum(b.calls for b in backends)
     assert calls_first > 0 and list((tmp_path / "sites").glob("sites-*.parquet"))
 
     backends.clear()
-    second = predict_file(inp, cfg, workers=1)
+    second = predict_pairs(inp, cfg, model, workers=1)
     assert sum(b.calls for b in backends) == 0
     assert [vars(s) for s in second[0].sites] == [vars(s) for s in first[0].sites]
     assert second[0].prediction == first[0].prediction
 
     with pytest.raises(LookupError):  # different finder settings -> not saved -> --require-sites fails
-        predict_file(inp, {**cfg, "finder": "Personalized;1;9;7", "require_sites": True}, workers=1)
+        predict_pairs(inp, {**cfg, "finder": "Personalized;1;9;7", "require_sites": True}, model, workers=1)
 
 
 def test_store_loaded_with_keys_only_reads_those_pairs(tmp_path):
@@ -140,20 +141,20 @@ def test_accessibility_energies_are_saved_and_reused(tmp_path, monkeypatch):
             return torch.tensor([[-1.0, 1.0]]).repeat(len(x), 1)
 
     monkeypatch.setattr(pipeline, "make_backend", fake_make_backend)
-    monkeypatch.setattr(pipeline, "load_artifact", lambda path: (Positive(), OneHotFlat(30, 40), {}))
     inp = tmp_path / "pairs.tsv"
     inp.write_text(f"miRNA\tgene_name\tEnsemblId\tMature_mirna_transcript\t3UTR_transcript\ng\tG\tE\t{MIRNA}\t{UTR}\n")
     cfg = {"model": "x", "finder": "miRAW", "backend": "bindings", "max_site_length": 40,
            "seed_alignment_offset": 5, "sites_dir": str(tmp_path / "sites"),
            "filters": ["AccessibilityEnergy;10"]}  # fmt: skip
 
-    first = predict_file(inp, cfg, workers=1)
+    model = Model(Positive(), OneHotFlat(30, 40))
+    first = predict_pairs(inp, cfg, model, workers=1)
     assert first[0].sites and sum(b.opens for b in backends) > 0
     assert list((tmp_path / "sites").glob("opening-*.parquet"))
 
     backends.clear()
     # a stricter threshold removes every site (ΔG_open = 4 > 3) using only the saved energies
-    second = predict_file(inp, {**cfg, "filters": ["AccessibilityEnergy;3"]}, workers=1)
+    second = predict_pairs(inp, {**cfg, "filters": ["AccessibilityEnergy;3"]}, model, workers=1)
     assert sum(b.opens for b in backends) == 0 and sum(b.calls for b in backends) == 0
     assert second[0].removed_sites == len(second[0].sites) > 0 and second[0].prediction == 0.0
     assert first[0].removed_sites == 0

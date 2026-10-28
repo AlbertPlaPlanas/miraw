@@ -8,10 +8,11 @@ from pathlib import Path
 
 import pandas as pd
 
+from pymiraw import resources
+from pymiraw.config import PredictConfig
 from pymiraw.evaluation.metrics import gene_level_metrics
 from pymiraw.prediction.pipeline import predict_file, results_frame
 
-PAPER_SUMMARY = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "paper_global_summary.csv"
 CONFIGS = [
     (f, flt) for f in ("miRAW", "Personalized;0;9;7", "Personalized;1;9;7", "PITA", "TS") for flt in ("NF", "AE")
 ]
@@ -36,7 +37,7 @@ def run_parity(
     workers=None,
     max_site_length=40,
     seed_alignment_offset=5,
-    backend_args=None,
+    vienna_bin=None,
     sites_dir=None,
 ):
     """Returns a DataFrame with our metrics per (config, set). Resumable: finished runs are reused."""
@@ -47,12 +48,12 @@ def run_parity(
             tag = f"{finder.replace(';', '_')}_{flt}_{k}"
             f = out_dir / tag / "metrics.json"
             if not f.exists():
-                cfg = dict(
-                    model=model,
+                cfg = PredictConfig(
+                    model=str(model),
                     finder=finder,
                     filters=FILTERS[flt],
                     backend=backend,
-                    backend_args=backend_args or {},
+                    vienna_bin=vienna_bin,
                     cache_dir=cache_dir,
                     sites_dir=sites_dir,
                     max_site_length=max_site_length,
@@ -68,7 +69,7 @@ def run_parity(
 
 def compare_with_paper(ours: pd.DataFrame, tolerance: float = 0.02) -> pd.DataFrame:
     """Mean Accuracy/F1 per config vs the paper; ``ok`` if both are within ``tolerance``."""
-    paper = pd.read_csv(PAPER_SUMMARY)
+    paper = resources.paper_global_summary()
     paper = paper[paper.set.isin(ours.set.unique())]
     cols = ["Accuracy", "F1"]
     a = ours.groupby("config")[cols].mean().add_suffix("_ours")

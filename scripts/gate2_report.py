@@ -1,8 +1,8 @@
 """Gate 2 report from the committed result files: non-inferiority of the retrained models vs the paper (rule: docs/PLAN.md section 6).
 
 Verdict rows:
-  site   : per-fold differences vs the paper's own fold models re-scored (tests/fixtures/paper_cv_xent_models_rescored.csv).
-  gene   : per (config, set) differences vs the paper's GlobalSummary (tests/fixtures/paper_global_summary.csv).
+  site   : per-fold differences vs the paper's own fold models re-scored (pymiraw/resources/paper_cv_xent_models_rescored.csv).
+  gene   : per (config, set) differences vs the paper's GlobalSummary (pymiraw/resources/paper_global_summary.csv).
   gene/p : per-fold paired differences, our fold-f model - the paper's fold-f model through the same pipeline
            (docs/results/gene_level_paper_folds.csv); required once more than one fold has gene-level results.
 Diagnostics (printed, not in the verdict):
@@ -15,16 +15,18 @@ from pathlib import Path
 
 import pandas as pd
 
+from pymiraw import resources
 from pymiraw.evaluation.noninferiority import CONFIDENCE, MARGINS, METHOD, non_inferiority
 
 root = Path(__file__).resolve().parents[1]
-site_paper = pd.read_csv(root / "tests/fixtures/paper_cv_xent_models_rescored.csv").set_index("fold")
-gene_paper = pd.read_csv(root / "tests/fixtures/paper_global_summary.csv")
-cv = pd.read_csv(root / "docs/results/cv_paper_regime.csv")
-gene = pd.read_csv(root / "docs/results/gene_level_retrained.csv")
+results = Path(sys.argv[1]) if len(sys.argv) > 1 else root / "docs/results"  # or a re-run (scripts/verify_gates.py)
+site_paper = resources.paper_cv_models().set_index("fold")
+gene_paper = resources.paper_global_summary()
+cv = pd.read_csv(results / "cv_paper_regime.csv")
+gene = pd.read_csv(results / "gene_level_retrained.csv")
 if "fold" not in gene:  # files written before the fold column existed are all fold 6
     gene["fold"] = 6
-paper_folds_file = root / "docs/results/gene_level_paper_folds.csv"  # the paper's own fold models, same pipeline
+paper_folds_file = results / "gene_level_paper_folds.csv"  # the paper's own fold models, same pipeline
 paper_folds = pd.read_csv(paper_folds_file) if paper_folds_file.exists() else None
 
 
