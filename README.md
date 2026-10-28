@@ -1,5 +1,13 @@
 # pyMIRAW
 
+[![CI](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/ci.yml)
+[![Secret scan](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/secrets.yml/badge.svg)](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/secrets.yml)
+[![Python](https://img.shields.io/badge/python-%E2%89%A53.11-blue)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Paper](https://img.shields.io/badge/paper-10.1371%2Fjournal.pcbi.1006185-orange)](https://doi.org/10.1371/journal.pcbi.1006185)
+[![Status](https://img.shields.io/badge/status-work%20in%20progress-yellow)](#3-status)
+
 Python/PyTorch reimplementation of **miRAW** ([Pla, Zhong & Rayner, PLoS Comput Biol 2018](https://doi.org/10.1371/journal.pcbi.1006185)),
 a deep-learning miRNA-target predictor. The original is Java/DL4J
 ([bitbucket.org/bipous](https://bitbucket.org/bipous/miraw_-dl4mirnatargeting_code)).
