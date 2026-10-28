@@ -78,32 +78,11 @@ Adding a new architecture (CNN, RNN, Transformer): see [docs/extending.md](docs/
 
 ## Status
 
-What it takes to bring the original miRAW to Python, and where that stands (details and numbers:
-[docs/PROGRESS.md](docs/PROGRESS.md)). Last updated 2026-10-28.
-
-**Done**
-
-| Part | State |
-|---|---|
-| Original weights (DL4J `bestModel.bin`) imported to PyTorch | exact: fold-6 accuracy 0.935143 as in the paper |
-| Candidate-site finders (miRAW, 7-1:10, 7-2:10, PITA, TargetScan), accessibility filter, encoding, gene scoring | ported |
-| Pipeline vs paper, all 10 test sets x 10 configurations | **passed**: every configuration within 0.003 accuracy / 0.005 F1 of the published mean (tolerance 0.03) |
-| Pipeline with the original ViennaRNA 2.2.5 (`environment-reference.yml`) | exact: identical site counts and scores on 64 pairs |
-| Saved candidate sites (`--sites-dir`) | done: 100 pairs take 104 s cold and 3 s warm, identical output |
-| Training stack, orientation experiment | done; retrained models are non-inferior to the paper's (site level folds 0-8; gene level fold 6, all 10 sets and configs) but are **not** the default |
-| Docs: extending, data, lockfile | done |
-
-**Remaining**
-
-1. Gate 2 with the other folds' retrained models, and the filtered (AE) configs for more than one seed.
-2. Run the original `miRAW.jar` as an oracle on sampled pairs (the paper's recorded outputs stand in for it today).
-3. Gate 3: the full unbalanced test set (`Evaluate_14K_FULL`).
-4. Not ported: the `SpecificZones` / `ReservedZones` filters (unused by the paper's configs) and rebuilding the dataset from raw TarBase/miRTarBase/Ensembl (out of scope for v1).
-5. Profiling, packaging for PyPI and the `v1.0.0` release.
-
-The retrained models only reproduce the paper when trained like the original: the released training
-files alternate labels and the original read them in file order, never shuffled (`--no-shuffle`).
-`--original-weights` stays the default.
+**TL;DR (2026-10-28):** the port is functionally complete and reproduces the paper's benchmark with the
+original weights (all 10 configurations x 10 test sets within 0.005 of the published means); retrained
+models are non-inferior but not the default. **Remaining:** Gate 2 on the other folds and filtered
+configs, the `miRAW.jar` oracle run, Gate 3 (full unbalanced set), profiling, PyPI packaging and the
+`v1.0.0` release. Details: [docs/PROGRESS.md](docs/PROGRESS.md).
 
 ## Commands
 
