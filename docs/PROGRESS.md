@@ -11,7 +11,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all means within 0.005) |
-| 4 Training stack | **done**; Gate 2 non-inferiority PASS for old-default on site level (folds 0-8) and gene level (fold 6, all 10 sets, 10 configs); not promoted |
+| 4 Training stack | **done**; Gate 2: site level PASS (folds 0-8); gene level PASS for fold 6 / per-cell, **FAIL per fold over 9 folds** (fold-to-fold swings, see Log 17:15); not promoted |
 | 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, Gate 2 with other folds' models and AE configs for seeds 1-2 |
 
 ## Gate results so far
@@ -70,6 +70,18 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-28 (17:15): **Gate 2 gene level on all 9 folds: the per-fold check FAILS.** All folds' retrained `old-default` models (seed 0; fold 6: 3 seeds)
+  were run through the pipeline on all 10 sets x 10 configs (`runs/gene_folds.sh`, 8 folds in 3.5 h incl. warm-up; each warm fold 6-13 min thanks to the saved
+  sites + ΔG_open). Results: `docs/results/gene_level_retrained.csv` (1030 runs, replaces `gene_level_fold6_retrained.csv`; `gene_level_compare.py` now globs all folds).
+  `scripts/gate2_report.py`: the per-cell rows still pass (accuracy lower bound -0.0016, F1 -0.0050; n = 100, optimistic: cells share pairs), but the new
+  per-fold row **fails**: mean dAcc +0.0003 / dF1 -0.0028 over 9 folds, lower bounds -0.0151 / -0.0123 vs limit -0.01. Per fold (dAcc / dF1 vs the paper's published
+  numbers): f0 -0.017/-0.018, f1 -0.003/+0.003, f2 +0.005/-0.003, f3 +0.020/-0.004, f4 +0.016/+0.003, f5 -0.008/-0.007, f6 +0.007/+0.005, f7 +0.011/+0.012,
+  f8 -0.029/-0.016. Site-level metrics of the same models are tight (acc 0.909-0.925, AUC 0.972-0.979). So the means match the paper but gene-level accuracy
+  varies by fold by up to ±0.03 (fold 3/4 gain on NF configs through recall, fold 0/8 lose). **Caveat on the baseline:** the paper's GlobalSummary comes from ONE model
+  (fold 6, `bestModel.bin`), so a per-fold comparison also measures model-to-model variation, not only our training stack. A paired baseline (the paper's own
+  fold-f model through the same gene-level pipeline) would separate the two; not yet run (needs `Results/ResultsCV/Set*/bestModel.bin` from the archive). The
+  rule is NOT being changed to make it pass; whether the per-fold row belongs in Gate 2 is the owner's decision. Original weights stay the default.
 
 * 2026-10-28 (15:50): **Everything model-independent is now precomputed and reused.** (1) `--sites-dir` also stores the accessibility
   energies ΔG_open (`opening-*.parquet`, key = backend/version + UTR hash + start + end): they depend only on UTR and position, so they are shared

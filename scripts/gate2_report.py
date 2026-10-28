@@ -16,7 +16,7 @@ root = Path(__file__).resolve().parents[1]
 site_paper = pd.read_csv(root / "tests/fixtures/paper_cv_xent_models_rescored.csv").set_index("fold")
 gene_paper = pd.read_csv(root / "tests/fixtures/paper_global_summary.csv")
 cv = pd.read_csv(root / "docs/results/cv_paper_regime.csv")
-gene = pd.read_csv(root / "docs/results/gene_level_fold6_retrained.csv")
+gene = pd.read_csv(root / "docs/results/gene_level_retrained.csv")
 if "fold" not in gene:  # files written before the fold column existed are all fold 6
     gene["fold"] = 6
 

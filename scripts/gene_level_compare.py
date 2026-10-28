@@ -13,7 +13,7 @@ from scipy.stats import wilcoxon
 root = Path(sys.argv[1] if len(sys.argv) > 1 else "runs")
 paper = pd.read_csv(Path(__file__).resolve().parents[1] / "tests/fixtures/paper_global_summary.csv")
 rows = []
-for d in sorted(root.glob("gene_*_f6_s*")):
+for d in sorted(root.glob("gene_*_f*_s*")):
     if not d.is_dir():
         continue
     _, orient, fold, seed = d.name.split("_")  # gene_<orientation>_f<fold>_s<seed>
