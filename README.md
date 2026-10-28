@@ -12,6 +12,7 @@ a deep-learning miRNA-target predictor. The original is Java/DL4J
 
 1. [How pyMIRAW compares to the original miRAW](#1-how-pymiraw-compares-to-the-original-miraw)
    * [Results](#results)
+   * [ViennaRNA version and exact reproduction](#viennarna-version-and-exact-reproduction)
    * [Why retraining does not give the same weights](#why-retraining-does-not-give-the-same-weights)
    * [What is the same and what differs](#what-is-the-same-and-what-differs)
 2. [Using pyMIRAW](#2-using-pymiraw)
@@ -39,6 +40,22 @@ a deep-learning miRNA-target predictor. The original is Java/DL4J
 
 The gates and their exact rules are in [docs/PLAN.md](docs/PLAN.md) (section 6); the result files are in
 [docs/results/](docs/results/).
+
+### ViennaRNA version and exact reproduction
+
+The original miRAW ran the ViennaRNA 2.2 command-line tools; pyMIRAW defaults to the faster ViennaRNA 2.7.2 Python
+bindings. ViennaRNA's energy parameters and algorithms changed between these versions, so a few candidate sites whose
+binding energy is close to the cut-off are found (or not) differently. With the original weights this changes the gene
+call for very few pairs (all 10 configurations stay within 0.005 accuracy and F1 of the paper). With ViennaRNA 2.2.5 the
+port is bit-exact. To reproduce the paper exactly, use the reference environment and the command-line backend:
+
+```bash
+conda env create -f environment-reference.yml                         # ViennaRNA 2.2.5 -> /opt/conda/envs/pymiraw-ref
+pymiraw evaluate pairs.tsv --backend cli --vienna-bin /opt/conda/envs/pymiraw-ref/bin
+```
+
+The 2.2.5 tools are much slower than the default bindings. How to select other ViennaRNA versions:
+[Choosing the ViennaRNA version](#command-line).
 
 ### Why retraining does not give the same weights
 
@@ -129,15 +146,24 @@ as a target when `Prediction > 0`**. Pairs without candidate sites, and positive
 * `--workers N` (default: all cores); `--sites-dir DIR` saves the ViennaRNA results on the first run and reuses them on
   later runs with any model (`--require-sites` fails instead of folding).
 
-**Exact reproduction with the original ViennaRNA.** The default backend is ViennaRNA 2.7 (fast, in-process). For a
-bit-exact match with the paper use the 2.2.5 reference environment:
+**Choosing the ViennaRNA version.** pyMIRAW folds RNA with ViennaRNA through one of two backends (`--backend`, or
+`backend:` in a YAML config):
+
+* `bindings` (default): the ViennaRNA Python bindings (`import RNA`) of the active environment, in-process and fast.
+  The version is whatever is installed there (2.7.2 in `environment.yml`); to use another one, install it in the
+  environment (e.g. `conda install -c bioconda viennarna=2.6.4`, or `pip install ViennaRNA==<version>`).
+* `cli`: the `RNAcofold` and `RNAfold` command-line tools of **any** installed ViennaRNA version, run as subprocesses
+  (much slower). `--vienna-bin DIR` is the folder holding the tools; without it the tools on the `PATH` are used.
 
 ```bash
-conda env create -f environment-reference.yml                         # -> /opt/conda/envs/pymiraw-ref
-pymiraw evaluate pairs.tsv --backend cli --vienna-bin /opt/conda/envs/pymiraw-ref/bin
+pymiraw evaluate pairs.tsv --backend cli --vienna-bin /path/to/viennarna/bin     # any version's tools
+pymiraw evaluate pairs.tsv --backend cli                                          # the RNAcofold on the PATH
 ```
 
-The command-line backend is much slower than the default.
+The same options exist for `pymiraw parity`. The version in use is recorded in the saved results: `--sites-dir` and
+`--cache-dir` key everything by backend and version, so results from different versions are never mixed. For the
+ViennaRNA version that reproduces the paper exactly, see
+[ViennaRNA version and exact reproduction](#viennarna-version-and-exact-reproduction).
 
 **Benchmark and training.**
 
@@ -192,6 +218,7 @@ from pymiraw.storage import original_weights_path
 model, encoder, _ = load_artifact(original_weights_path())   # .bin (DL4J) or .pt
 predictor = Predictor(model, encoder, get_site_finder("miRAW"), FoldService(make_backend("bindings")))
 res = predictor.predict_pair(mirna_sequence, utr_sequence)
+# other ViennaRNA: make_backend("cli", bin_dir="/path/to/viennarna/bin"); folding temperature: make_backend("bindings", temperature=25)
 res.prediction           # highest site score, in [-1, +1]; > 0 means target
 [(s.start, s.end, s.score) for s in res.sites]               # candidate sites and their scores
 ```
