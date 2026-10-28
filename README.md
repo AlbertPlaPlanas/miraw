@@ -80,8 +80,8 @@ Adding a new architecture (CNN, RNN, Transformer): see [docs/extending.md](docs/
 
 **TL;DR (2026-10-28):** the port is functionally complete and reproduces the paper's benchmark with the
 original weights (all 10 configurations x 10 test sets within 0.005 of the published means); retrained
-models pass Gate 2 on every row except paired gene-level accuracy per fold (mean +0.005 over the paper's own fold
-models, but fold-to-fold swings of +-0.03, which the paper's own models show too), so they are not the default.
+models fail Gate 2 on 2 of 10 rows (site accuracy, marginally, and paired gene-level accuracy per fold: fold-to-fold
+swings of +-0.03, which the paper's own fold models show too), so they are not the default.
 **Remaining:** an owner decision on that Gate 2 row, the `miRAW.jar` oracle run, Gate 3 (full unbalanced set), profiling, PyPI packaging and the
 `v1.0.0` release. Details: [docs/PROGRESS.md](docs/PROGRESS.md).
 

@@ -11,7 +11,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all means within 0.005) |
-| 4 Training stack | **done**; Gate 2 **FAILS** on one row: paired gene-level accuracy per fold (vs the paper's own fold models; mean +0.005 but lower bound -0.023). All other rows pass, incl. paired gene F1 (see Log 21:15); not promoted |
+| 4 Training stack | **done**; Gate 2 (rank-based test) **FAILS** on 2 rows: site accuracy (lower -0.0109, limit -0.01) and paired gene-level accuracy per fold (lower -0.0195); all other rows pass (see Log 21:40); not promoted |
 | 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, AE configs for seeds 1-2 of fold 6 |
 
 ## Gate results so far
@@ -20,10 +20,10 @@ Plan and decisions: [PLAN.md](PLAN.md).
   0.9351428571 equals the paper's `BestModelEval.txt` value to all digits.
 * **Gate 1 (pipeline vs paper, original weights, ViennaRNA 2.7.2 bindings):** PASSED, 100/100 runs, all config means within
   0.003 accuracy / 0.005 F1 of the GlobalSummary (Log 02:30); bit-exact with ViennaRNA 2.2.5 (Log 01:00).
-* **Gate 2 (retrained model, `old-default`):** **FAIL on 1 of 10 verdict rows** (`scripts/gate2_report.py`, Log 21:15). Site level
-  acc/AUC PASS (fragile, slack 0.0001/0.0005); gene per cell acc/F1 PASS; gene paired per fold F1 PASS (+0.0047, lower -0.0048), accuracy
-  **FAIL** (+0.0052, lower -0.0229 vs -0.01). The paper's own fold models fail the same kind of per-fold check against their published
-  numbers by more (lower -0.026 acc). Not promoted; the original weights stay the default.
+* **Gate 2 (retrained model, `old-default`, rank-based test since 21:40):** **FAIL on 2 of 10 verdict rows** (`scripts/gate2_report.py`).
+  Site acc FAIL (HL -0.0016, lower -0.0109), site AUC PASS (fragile); gene per cell acc/F1 PASS; gene paired per fold F1 PASS
+  (+0.0066, lower -0.0044), accuracy FAIL (+0.0015, lower -0.0195). The paper's own fold models fail the analogous per-fold check by more.
+  Not promoted; the original weights stay the default.
 * **Orientation experiment (`old-default` vs `natural`):** DECIDED: keep `old-default`. `natural` is significantly better at site
   level (paper regime: AUC +0.0015, acc +0.0057, p <= 0.002) but not at gene level (F1 -0.006 vs old-default, p = 0.76).
 
@@ -67,6 +67,21 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-28 (21:40): **Gate 2 test is now rank-based (owner: wins must not penalise us); result: OVERALL FAIL on 2 rows.**
+  `pymiraw.evaluation.noninferiority`: `METHOD = "rank"` = exact one-sided 99 % Wilcoxon signed-rank lower bound of the Hodges-Lehmann
+  estimate (a large win counts by rank, not size; needs n >= 7 at 99 %); the t-bound stays available as `method="t"`. Post hoc (decided
+  after the paired results), recorded as such in PLAN.md section 6. Tests: 3 new (n = 9 bound = 4th smallest Walsh average; a huge win
+  gives the same bound as a modest one under rank but a lower one under t; minimum n); 111 unit tests pass. `scripts/gate2_report.py`
+  (old-default): site acc HL -0.0016, lower **-0.0109 FAIL** (was -0.0099 PASS under t: the exact rank bound at n = 9 is stricter); site AUC
+  -0.0041 PASS (fragile); gene per cell acc -0.0013 / F1 -0.0035 PASS; **gene/p acc HL +0.0015, lower -0.0195 FAIL** (was -0.0229);
+  gene/p F1 HL +0.0066, lower -0.0044 PASS. The paired accuracy failure is not caused by the large wins: folds 2 and 8 are ~0.027 below
+  the paper's same-fold models, and 3 of 9 folds are below -0.01. **Model improvements: owner rule "no tuning with things the paper did
+  not do".** A 3-seed ensemble per fold was tried and withdrawn for that reason (site level on the CV test folds it gave acc 0.942 /
+  AUC 0.986 vs single seeds 0.919 / 0.975; the gene-level run was stopped after part of fold 0 and the code was removed, not committed).
+  Within the paper's own recipe (XENT, 10 epochs, unshuffled, lowest-training-loss epoch) there is no knob left to change without tuning on
+  the gate's test sets, and the paper's own fold models fail the analogous per-fold check by more (diagnostic: lower -0.0262 acc).
+  Original weights stay the default.
 
 * 2026-10-28 (21:15): **Gate 2 final, under the paired rule: OVERALL FAIL, only on paired gene-level accuracy.** The paper's 9 fold models ran
   through the same pipeline on all 10 sets x 10 configs (`runs/gene_paper_folds.sh`, 20:15-21:05, all exit 0; fold 6 = `runs/parity`). Rows:

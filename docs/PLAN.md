@@ -405,8 +405,13 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
 * **Gate 2: retrained model (pyMIRAW training stack): non-inferiority.** Rule agreed 2026-10-27, replacing
   the earlier "mean at least as high as the paper". Folding is held fixed so the gate measures only the
   network. A retrained model passes if, for every row below, the **one-sided 99 % lower confidence bound
-  (t-based) of the mean paired difference (ours - paper) is above -margin**, with margins 0.01 for
-  accuracy and F1 and 0.005 for AUC (`pymiraw.evaluation.noninferiority`: `CONFIDENCE`, `MARGINS`).
+  of the paired difference (ours - paper) is above -margin**, with margins 0.01 for
+  accuracy and F1 and 0.005 for AUC (`pymiraw.evaluation.noninferiority`: `CONFIDENCE`, `MARGINS`, `METHOD`).
+  Bound (changed 2026-10-28, owner decision, **after** the paired results were seen): exact Wilcoxon signed-rank
+  bound of the Hodges-Lehmann estimate, so that large wins count by rank and do not widen the bound. Until then
+  it was the t-based bound of the mean (`method="t"`), under which large wins inflate the SD.
+  Retrained models may only use what the paper's training did (owner rule, 2026-10-28): no ensembling,
+  threshold calibration or other additions to pass the gate.
   * Site level: per-fold differences over folds 0-8 (seed-averaged), 9 paired values, versus the paper's
     own fold models **re-scored with our metric code** (`tests/fixtures/paper_cv_xent_models_rescored.csv`;
     acc 0.9210, AUC 0.9765). The paper's *recorded* AUC (0.958) used coarse thresholds and is not the

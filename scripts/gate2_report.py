@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pymiraw.evaluation.noninferiority import CONFIDENCE, MARGINS, non_inferiority
+from pymiraw.evaluation.noninferiority import CONFIDENCE, MARGINS, METHOD, non_inferiority
 
 root = Path(__file__).resolve().parents[1]
 site_paper = pd.read_csv(root / "tests/fixtures/paper_cv_xent_models_rescored.csv").set_index("fold")
@@ -58,16 +58,17 @@ for o, df in gene.groupby("orientation"):
 if paper_folds is not None:
     diagnostics.append(("paper folds", vs_global_summary(paper_folds).groupby("fold")[["dAccuracy", "dF1"]].mean()))
 
-header = f"{'orientation':12s} {'level':6s} {'metric':9s} {'n':>3s} {'mean':>8s} {'lower':>8s} {'limit':>8s} {'slack':>8s}  verdict"
+header = f"{'orientation':12s} {'level':6s} {'metric':9s} {'n':>3s} {'estim':>8s} {'lower':>8s} {'limit':>8s} {'slack':>8s}  verdict"
 
 
 def line(o, lvl, m, v):
     fragile = "  (fragile)" if v.non_inferior and v.slack < 0.001 else ""
-    return f"{o:12s} {lvl:6s} {m:9s} {v.n:3d} {v.mean:+8.4f} {v.lower:+8.4f} {-v.margin:+8.4f} {v.slack:+8.4f}  {'PASS' if v.non_inferior else 'FAIL'}{fragile}"
+    return f"{o:12s} {lvl:6s} {m:9s} {v.n:3d} {v.estimate:+8.4f} {v.lower:+8.4f} {-v.margin:+8.4f} {v.slack:+8.4f}  {'PASS' if v.non_inferior else 'FAIL'}{fragile}"
 
 
 print(
-    f"Gate 2 non-inferiority: one-sided {CONFIDENCE:.0%} lower bound of (ours - paper) must exceed -margin; margins {MARGINS}\n"
+    f"Gate 2 non-inferiority ({METHOD}): one-sided {CONFIDENCE:.0%} lower bound of (ours - paper) must exceed -margin; margins {MARGINS}"
+    "\n(estim = Hodges-Lehmann estimate for 'rank', mean for 't')\n"
 )
 print(header)
 ok = not missing
