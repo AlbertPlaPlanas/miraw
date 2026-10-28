@@ -112,7 +112,7 @@ Xavier initialisation, 10 epochs, file order). The remaining differences are pla
 | | original miRAW | pyMIRAW |
 |---|---|---|
 | Network | DL4J MLP 280 → 400-350-300-150-100-100-50-50 → 2 | same architecture in PyTorch; DL4J `.bin` checkpoints load directly |
-| Site finders | miRAW (6-1:10), Personalized, PITA, TargetScan | same; `miRAW` = `Default` with miRNA nt 2-10, as in the published runs |
+| Site finders | miRAW (6-1:10), Personalized, PITA, TargetScan | all available: `miRAW` (= `Default`, miRNA nt 2-10, as in the published runs), `Personalized;<start>;<size>;<min pairs>` (e.g. `Personalized;0;9;7`, `Personalized;1;9;7`), `PITA`, `TargetScan` / `TS` |
 | Filters | AccessibilityEnergy, SpecificZones, ReservedZones | AccessibilityEnergy (the one the paper used); the other two are not ported |
 | RNA folding | ViennaRNA 2.2 command-line tools | ViennaRNA 2.7 Python bindings by default; 2.2.5 command-line tools for exact reproduction |
 | Input / output | unified TSV, `targetPredictionOutput.csv`, `targetSites.csv` | same files; YAML configs, and legacy `.properties` files are read |
