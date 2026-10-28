@@ -11,22 +11,19 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all means within 0.005) |
-| 4 Training stack | **done**; Gate 2: site level PASS (folds 0-8); gene level PASS for fold 6 / per-cell, **FAIL per fold over 9 folds** (fold-to-fold swings, see Log 17:15); not promoted |
-| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, Gate 2 with other folds' models and AE configs for seeds 1-2 |
+| 4 Training stack | **done**; Gate 2 **FAILS** on one row: paired gene-level accuracy per fold (vs the paper's own fold models; mean +0.005 but lower bound -0.023). All other rows pass, incl. paired gene F1 (see Log 21:15); not promoted |
+| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, AE configs for seeds 1-2 of fold 6 |
 
 ## Gate results so far
 
 * **Gate 0 (imported paper model vs paper CV):** PASSED, exactly. Fold 6 test accuracy
   0.9351428571 equals the paper's `BestModelEval.txt` value to all digits.
-* **Gate 1 (pipeline vs paper, original weights, ViennaRNA 2.7.2 bindings):** partial. 64 pairs of
-  balanced set 0 with `miRAW` NF: gene-level call identical for 64/64, max |score diff| 1.8e-4.
-  Per-pair PosSites/NegSites equal for only 69 % of pairs (differences of a few sites, mostly
-  NegSites); not yet explained, suspected ViennaRNA 2.2 vs 2.7 energy differences near dG=0 or
-  edge windows. The site finder reproduced 99.4 % of recorded sites exactly in the early prototype.
-  Full 10 configs x 10 sets run: see "Running jobs".
-* **Gate 2 (retrained model):** PASSES the agreed non-inferiority rule on the partial evidence (see Log 23:30), not promoted. Site level: natural 0.9249 / 0.9766, old-default 0.9192 / 0.9752 vs
-  paper models 0.9210 / 0.9765. Gene level (fold 6, NF configs, sets 0-1): old-default +0.003 F1, natural -0.002 F1 vs paper. Shuffled
-  training stays below (0.88-0.90 / 0.954-0.964). AE configs and the other sets are still to run.
+* **Gate 1 (pipeline vs paper, original weights, ViennaRNA 2.7.2 bindings):** PASSED, 100/100 runs, all config means within
+  0.003 accuracy / 0.005 F1 of the GlobalSummary (Log 02:30); bit-exact with ViennaRNA 2.2.5 (Log 01:00).
+* **Gate 2 (retrained model, `old-default`):** **FAIL on 1 of 10 verdict rows** (`scripts/gate2_report.py`, Log 21:15). Site level
+  acc/AUC PASS (fragile, slack 0.0001/0.0005); gene per cell acc/F1 PASS; gene paired per fold F1 PASS (+0.0047, lower -0.0048), accuracy
+  **FAIL** (+0.0052, lower -0.0229 vs -0.01). The paper's own fold models fail the same kind of per-fold check against their published
+  numbers by more (lower -0.026 acc). Not promoted; the original weights stay the default.
 * **Orientation experiment (`old-default` vs `natural`):** DECIDED: keep `old-default`. `natural` is significantly better at site
   level (paper regime: AUC +0.0015, acc +0.0057, p <= 0.002) but not at gene level (F1 -0.006 vs old-default, p = 0.76).
 
@@ -71,14 +68,30 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
-* 2026-10-28 (20:45): **Gate 2 rule decided (owner), before the paired results were seen:** the gene-level per-fold verdict row is now
+* 2026-10-28 (21:15): **Gate 2 final, under the paired rule: OVERALL FAIL, only on paired gene-level accuracy.** The paper's 9 fold models ran
+  through the same pipeline on all 10 sets x 10 configs (`runs/gene_paper_folds.sh`, 20:15-21:05, all exit 0; fold 6 = `runs/parity`). Rows:
+  `docs/results/gene_level_paper_folds.csv` (900 runs; `gene_level_retrained.csv` regenerated, same rows, now sorted by fold).
+  `scripts/gate2_report.py`: `gene/p` accuracy mean **+0.0052**, lower bound **-0.0229** (limit -0.01) FAIL; `gene/p` F1 mean **+0.0047**,
+  lower **-0.0048** PASS; every other verdict row PASS (unchanged). Paired per fold, ours - paper fold f, dAcc / dF1: f0 -0.006/+0.010,
+  f1 +0.024/+0.013, f2 -0.028/-0.014, f3 +0.065/+0.016, f4 +0.021/+0.008, f5 -0.011/+0.007, f6 +0.007/+0.006, f7 +0.002/+0.007,
+  f8 -0.027/-0.009. Ours beat the paper's fold model in F1 in 7/9 folds. **Why pairing did not cancel the swings:** they are model-specific,
+  not fold-data-specific (per-fold gene accuracy, ours vs paper's same fold: r = -0.14), so pairing adds the paper's variation instead of
+  removing it: SD of the paired per-fold dAcc 0.029 vs 0.016 for ours vs the GlobalSummary. The paper's fold models vary more than ours
+  (per-fold gene accuracy SD 0.022 vs 0.016; e.g. paper fold 3 gene specificity is 0.21 below ours, fold 3 is 0.046 below the GlobalSummary).
+  Diagnostic: the paper's own fold models vs the GlobalSummary would fail the unpaired per-fold rule too (acc mean -0.0051, lower -0.0264;
+  F1 -0.0075, lower -0.0194). With n = 9 and a between-model SD of 0.02-0.03, the 99 % bound sits ~0.02-0.03 below the mean, so the
+  0.01 accuracy margin cannot be met by any single-model-per-fold comparison, the paper's own models included. **Rule not changed after
+  seeing the results**; any change (e.g. more seeds per fold, a different margin, or F1 only at gene level) is the owner's decision and
+  would be post hoc. No practical consequence now: the original weights are the default either way.
+
+* 2026-10-28 (20:28): **Gate 2 rule decided (owner), before the paired results were seen:** the gene-level per-fold verdict row is now
   **paired** (`gene/p`: our fold f - the paper's fold f, same cells and pipeline, n = 9, same margins/confidence). The unpaired per-fold row
   (vs the GlobalSummary = one model) moves to the diagnostics, together with the same row for the paper's own fold models. The per-cell
   rows vs the GlobalSummary stay in the verdict (absolute anchor, with Gate 1). PLAN.md section 6 updated; `scripts/gate2_report.py`
   restructured (verdict rows vs diagnostics; OVERALL fails while `docs/results/gene_level_paper_folds.csv` is missing). Smoke-tested on
   partial data (paper folds 0, 6 and part of 1); the retrained rows file regenerates identically. Waiting for paper folds 2-5, 7, 8.
 
-* 2026-10-28 (20:30): **Running: paired Gate 2 baseline (the paper's own fold models).** The archive holds all 9 paper CV models
+* 2026-10-28 (20:15): **Running: paired Gate 2 baseline (the paper's own fold models).** The archive holds all 9 paper CV models
   (`PLOSComb/Results/ResultsCV/VeryDeepXENT14K_e10/Set{0-8}/bestModel.bin`; extracted to the gitignored `data/original/ResultsCV/`).
   `Set6/bestModel.bin` is byte-identical (sha256 416b1f56...) to `NetworkModel/bestModel.bin`, so the default weights = paper fold 6 and
   `runs/parity` (Gate 1) is its run (symlinked as `runs/gene_paper_f6_s0`). `runs/gene_paper_folds.sh` runs folds 0-5,7,8 on all 10 sets x
