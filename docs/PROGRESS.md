@@ -71,6 +71,23 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (20:45): **Gate 2 rule decided (owner), before the paired results were seen:** the gene-level per-fold verdict row is now
+  **paired** (`gene/p`: our fold f - the paper's fold f, same cells and pipeline, n = 9, same margins/confidence). The unpaired per-fold row
+  (vs the GlobalSummary = one model) moves to the diagnostics, together with the same row for the paper's own fold models. The per-cell
+  rows vs the GlobalSummary stay in the verdict (absolute anchor, with Gate 1). PLAN.md section 6 updated; `scripts/gate2_report.py`
+  restructured (verdict rows vs diagnostics; OVERALL fails while `docs/results/gene_level_paper_folds.csv` is missing). Smoke-tested on
+  partial data (paper folds 0, 6 and part of 1); the retrained rows file regenerates identically. Waiting for paper folds 2-5, 7, 8.
+
+* 2026-10-28 (20:30): **Running: paired Gate 2 baseline (the paper's own fold models).** The archive holds all 9 paper CV models
+  (`PLOSComb/Results/ResultsCV/VeryDeepXENT14K_e10/Set{0-8}/bestModel.bin`; extracted to the gitignored `data/original/ResultsCV/`).
+  `Set6/bestModel.bin` is byte-identical (sha256 416b1f56...) to `NetworkModel/bestModel.bin`, so the default weights = paper fold 6 and
+  `runs/parity` (Gate 1) is its run (symlinked as `runs/gene_paper_f6_s0`). `runs/gene_paper_folds.sh` runs folds 0-5,7,8 on all 10 sets x
+  10 configs (same pipeline, saved sites, ~12 min per fold); progress `runs/gene_paper_folds.progress`. Scripts: `gene_level_compare.py`
+  now writes `orientation == paper` rows to `docs/results/gene_level_paper_folds.csv`; `gate2_report.py` adds a paired row `gene/p`
+  (per fold: ours fold f - paper fold f over the same cells) and a diagnostic (not in the verdict): the paper's fold models vs the GlobalSummary
+  with the same unpaired per-fold rule. Why: gene-level per-fold swings follow each model's site recall/specificity balance (Spearman 0.95 with
+  gene recall), not its site accuracy (-0.63 with gene accuracy), so the unpaired per-fold row mostly measures model-to-model variation.
+
 * 2026-10-28 (17:15): **Gate 2 gene level on all 9 folds: the per-fold check FAILS.** All folds' retrained `old-default` models (seed 0; fold 6: 3 seeds)
   were run through the pipeline on all 10 sets x 10 configs (`runs/gene_folds.sh`, 8 folds in 3.5 h incl. warm-up; each warm fold 6-13 min thanks to the saved
   sites + ΔG_open). Results: `docs/results/gene_level_retrained.csv` (1030 runs, replaces `gene_level_fold6_retrained.csv`; `gene_level_compare.py` now globs all folds).

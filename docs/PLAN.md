@@ -414,6 +414,16 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
   * Gene level: per (config x balanced test set) differences, run through the same pipeline and folding
     backend as the paper numbers (`tests/fixtures/paper_global_summary.csv`). Metrics: accuracy, F1.
     The final check must cover all 10 configs (NF and AE) and all 10 sets.
+  * Gene level, per fold (added 2026-10-28, owner decision, fixed **before** the paired results were seen):
+    one paired value per fold 0-8 = mean over the same (config x set) cells of (our fold-f model - the
+    paper's own fold-f model, `PLOSComb/Results/ResultsCV/VeryDeepXENT14K_e10/Set<f>/bestModel.bin`), both run
+    through the same pipeline, folding backend and saved sites. Metrics: accuracy, F1. Same margins and
+    confidence. Reason: the GlobalSummary comes from one model (paper fold 6 = `NetworkModel/bestModel.bin`,
+    byte-identical) and gene-level results swing by up to ±0.03 between fold models, so an unpaired per-fold
+    comparison against it measures model-to-model variation rather than the training stack. The unpaired
+    per-fold row (each of our fold models vs the GlobalSummary) and the same row for the paper's own fold
+    models are still printed by the report, as diagnostics outside the verdict. The per-cell row above, together
+    with Gate 1, remains the absolute anchor to the published numbers.
   * `scripts/gate2_report.py` evaluates the rule from the committed result files and exits non-zero on failure.
   * Limits: the cells of the gene-level check share pairs across configs, so its bounds are optimistic;
     passes with slack below 0.001 are flagged as fragile. The margins were chosen after seeing the data.

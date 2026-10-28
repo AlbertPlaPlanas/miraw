@@ -33,8 +33,12 @@ for d in sorted(root.glob("gene_*_f*_s*")):
             }
         )
 ours = pd.DataFrame(rows)
-if len(sys.argv) > 2:  # persist the per-run rows (the committed docs/results file is produced this way)
-    ours.sort_values(["orientation", "seed", "config", "set"]).to_csv(sys.argv[2], index=False)
+if len(sys.argv) > 2:  # persist the per-run rows (the committed docs/results files are produced this way)
+    out, is_paper = Path(sys.argv[2]), ours.orientation == "paper"  # gene_paper_f<f>_s0 = the paper's own fold models
+    keys = ["orientation", "fold", "seed", "config", "set"]
+    ours[~is_paper].sort_values(keys).to_csv(out, index=False)
+    if is_paper.any():
+        ours[is_paper].sort_values(keys).to_csv(out.with_name("gene_level_paper_folds.csv"), index=False)
 ours = ours.merge(paper[["config", "set", "Accuracy", "F1"]], on=["config", "set"], suffixes=("", "_paper"))
 ours["dAcc"], ours["dF1"] = ours.Accuracy - ours.Accuracy_paper, ours.F1 - ours.F1_paper
 print(
