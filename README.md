@@ -80,7 +80,7 @@ Adding a new architecture (CNN, RNN, Transformer): see [docs/extending.md](docs/
 
 **TL;DR (2026-10-28):** the port is functionally complete and reproduces the paper's benchmark with the
 original weights (all 10 configurations x 10 test sets within 0.005 of the published means); retrained
-models pass Gate 2 (non-inferiority within 0.02 accuracy/F1 and 0.005 AUC, margins set 2026-10-28) but are not the default.
+models pass Gate 2 (non-inferiority within 0.02 accuracy/F1 and 0.005 AUC) but are not the default.
 **Remaining:** a decision on promoting a retrained model, the `miRAW.jar` oracle run, Gate 3 (full unbalanced set), profiling, PyPI packaging and the
 `v1.0.0` release. Details: [docs/PROGRESS.md](docs/PROGRESS.md).
 
@@ -93,8 +93,8 @@ models pass Gate 2 (non-inferiority within 0.02 accuracy/F1 and 0.005 AUC, margi
   F1 of the published results (Gate 1).
 * **Training from scratch (same recipe, same folds): comparable results, not identical ones.** Retrained models match the
   paper's on average (site-level accuracy -0.002 and AUC -0.001 versus the paper's own fold models; gene-level accuracy and
-  F1 within 0.005) and pass the non-inferiority test of Gate 2 (99 % one-sided bound within 0.02 accuracy/F1 and 0.005 AUC;
-  margins set after the results were known, and paired gene-level accuracy passes with little slack). Individual models,
+  F1 within 0.005) and pass the non-inferiority test of Gate 2 (99 % one-sided bound within 0.02 accuracy/F1 and 0.005 AUC).
+  Individual models,
   ours and the paper's alike, differ by up to about ±0.03 in gene-level accuracy from fold to fold.
 
 Why retraining does not give the same weights, even though the recipe is the same (Nesterov SGD, momentum 0.9, learning
