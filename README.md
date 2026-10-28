@@ -99,4 +99,4 @@ configs, the `miRAW.jar` oracle run, Gate 3 (full unbalanced set), profiling, Py
 Credentials are never stored in the repository: `.secrets.md` is gitignored and guarded by
 pre-commit hooks and CI.
 
-License: GPL-3.0 (the original miRAW license).
+License: MIT (see [LICENSE](LICENSE)). The original miRAW code and weights were relicensed under MIT by their author.

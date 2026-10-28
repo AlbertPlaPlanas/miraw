@@ -71,6 +71,10 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (14:30): **Licence is MIT** (owner decision: they are the author of the original miRAW and relicense it). `LICENSE` was already MIT;
+  fixed the remaining GPL-3.0 mentions in `pyproject.toml`, `README.md`, `docs/data.md`, `data/manifest.yaml`. The upstream Bitbucket repos still say GPL until the
+  owner changes them there. Third-party data (e.g. TarBase) keeps its own terms.
+
 * 2026-10-28 (11:40): Fixed `python -m pymiraw.cli`: the `__main__` guard sat above the `parity`/`train` commands, so they were
   not registered via `-m` (the installed `pymiraw` entry point was fine). **Running (Gate 2, other folds):** `runs/gene_folds.sh`
   = `pymiraw parity ... --model-path --model runs/train_paperRegime_old-default/old-default_f{f}_s0.pt --sets 0-9 --sites-dir runs/sites`

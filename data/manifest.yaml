@@ -8,7 +8,7 @@ files:
     size: 3080743
     note: >-
       The miRAW paper model (DL4J zip), byte-identical to CV Set6/bestModel.bin of the XENT run.
-      Source: bitbucket.org/bipous/miraw_data (PLOSComb.7z). GPL-3.0, (c) the miRAW authors.
+      Source: bitbucket.org/bipous/miraw_data (PLOSComb.7z). MIT, (c) the miRAW author.
   paper-archive:
     path: raw/original/miraw_data/PLOSComb.7z
     sha256: 7731647987ff10ab934bd4d13ee589cae8b57fe42f8b29cea1325dc02983ecba

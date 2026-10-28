@@ -59,5 +59,5 @@ The weights are looked up in this order: `$PYMIRAW_ORIGINAL_WEIGHTS`,
 
 ## Licences
 
-The archive and weights are GPL-3.0, copyright the miRAW authors. Third-party sources behind the
+The miRAW code, weights and archive are released under the MIT licence by their author (see `LICENSE`). Third-party sources behind the
 paper's dataset (for example TarBase) have their own terms; pyMIRAW does not redistribute them.
