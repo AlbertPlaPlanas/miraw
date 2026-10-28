@@ -10,7 +10,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 0 Bootstrap (env, skeleton, S3, hooks, CI) | **done**, `conda-lock.yml` generated (linux-64); not done: Java reference env (`environment-reference.yml`) not created; only the original weights are mirrored to S3 (the 1 GB archive is not) |
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
-| 3 Prediction and evaluation | **done**; Gate 1 passes on sets 0-5 (all 10 configs, means within 0.008), sets 6-9 running |
+| 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all means within 0.005) |
 | 4 Training stack | **done**; Gate 2 at statistical parity (old-default kept as orientation); not promoted |
 | 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, final Gate 1 (sets 6-9) / Gate 2 (AE configs, all sets) |
 
@@ -70,6 +70,17 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-28 (02:30): **GATE 1 PASSED: all 100 runs (10 configurations x 10 balanced test sets), original weights, ViennaRNA 2.7.2
+  bindings, vs the paper's GlobalSummary** (`docs/results/gate1_comparison.csv`, per-run rows `docs/results/gate1_all_sets.csv`,
+  reproduce with `pymiraw parity <balanced10 dir>`). Mean differences (ours - paper), accuracy / F1: miRAW-6-1:10 NF -0.000/-0.000,
+  AE +0.000/+0.001; 7-1:10 NF -0.001/-0.000, AE -0.001/-0.001; 7-2:10 NF -0.001/-0.001, AE -0.001/-0.002; PITA NF +0.001/+0.001,
+  AE -0.001/-0.002; TS NF +0.001/+0.001, AE -0.003/-0.005. **Largest mean difference 0.003 accuracy / 0.005 F1 (tolerance 0.03).**
+  Four single cells differ by > 0.01 (TS AE set 3 -0.031; Personalized;1;9;7 AE set 2 -0.018; PITA AE set 6 -0.016; Personalized;0;9;7
+  AE set 2 -0.011); all four have unreliable references: the original per-run files are truncated (PITA AE set 6: 459 of 1096 pairs,
+  positives only; Personalized AE set 2: 103 and 147 rows; TS AE set 3: 814 rows, and its TP/FN equal ours exactly) or the summary row
+  has a non-integer count (397.6). With ViennaRNA 2.2.5 the port is bit-exact (see 01:00 entry). Next: Gate 2 gene level on all
+  sets/configs for the retrained models (running).
 
 * 2026-10-27 (resume): Gate 1 verified alive at 23:54: parent pid 12086 up 5 h, 14 workers all running at ~42 % CPU, fold cache still being written; sets 0-6 complete (70 of 100 runs, set 6 finished 23:46, ~17 min per set), set 7 folding, so ETA is about 1 h; `runs/parity.log` is empty (0 bytes), so watch `ls runs/parity | wc -l` instead; no `comparison.csv` yet. Wrote `docs/data.md`. Next: when `comparison.csv` appears, copy it to `docs/results/`, record the full 10-set result here.
 

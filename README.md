@@ -1,9 +1,9 @@
 # pyMIRAW
 
-> **Work in progress.** The pipeline and the training stack are implemented and tested. Parity with the
-> paper is confirmed on the first balanced test set (all 10 configurations within 0.005 of the published
-> accuracy and F1) and on the first six of ten test sets; the rest is still running, so treat the results as preliminary.
-> Current status: [docs/PROGRESS.md](docs/PROGRESS.md).
+> **Work in progress.** The pipeline and the training stack are implemented and tested. With the original
+> weights the pipeline reproduces the paper's benchmark (all 10 configurations x 10 balanced test sets, every
+> mean within 0.003 accuracy / 0.005 F1 of the published values). Retrained models are being validated and are
+> not the default. Current status: [docs/PROGRESS.md](docs/PROGRESS.md).
 
 Python/PyTorch reimplementation of **miRAW** ([Pla, Zhong & Rayner, PLoS Comput Biol 2018](https://pmc.ncbi.nlm.nih.gov/articles/PMC6067737/)),
 a deep-learning miRNA-target predictor. The original is Java/DL4J
@@ -83,7 +83,7 @@ Adding a new architecture (CNN, RNN, Transformer): see [docs/extending.md](docs/
 | Imported original weights reproduce the paper's fold-6 accuracy | exact (0.935143) |
 | Pipeline vs paper, balanced test set 0, 10 configurations | all within 0.005 accuracy/F1 (tolerance 0.03) |
 | Pipeline vs paper with the original ViennaRNA version (2.2.5, `environment-reference.yml`) | exact: identical site counts and scores on 64 pairs |
-| Pipeline vs paper, test sets 0-5, mean of 10 configurations | all within 0.005 accuracy / 0.008 F1 of the published values (sets 6-9 running) |
+| Pipeline vs paper, all 10 test sets x 10 configurations | **passed**: every configuration within 0.003 accuracy / 0.005 F1 of the published mean (tolerance 0.03) |
 | Retrained model vs the paper's own fold models (site level, folds 0-8) | non-inferior at 99 % (accuracy 0.919-0.925, AUC 0.975-0.977 vs 0.921 / 0.9765) |
 | Retrained model at gene level | non-inferior on the partial evidence (fold 6, unfiltered configs, 2 test sets) |
 
