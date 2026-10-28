@@ -223,7 +223,7 @@ def parity(
     cache_dir: str = typer.Option(None),
     workers: int = typer.Option(None),
     sites_dir: str = typer.Option(None, "--sites-dir", help="Folder of saved candidate sites (reused and extended)."),
-    tolerance: float = typer.Option(0.03, help="Allowed |mean diff| for accuracy and F1."),
+    tolerance: float = typer.Option(0.02, help="Allowed |mean diff| for accuracy and F1."),
     vienna_bin: str = typer.Option(
         None, "--vienna-bin", help="Folder with RNAcofold/RNAfold for --backend cli (e.g. the pymiraw-ref env bin)."
     ),

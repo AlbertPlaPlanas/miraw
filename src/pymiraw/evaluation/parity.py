@@ -66,7 +66,7 @@ def run_parity(
     return pd.DataFrame(rows)
 
 
-def compare_with_paper(ours: pd.DataFrame, tolerance: float = 0.03) -> pd.DataFrame:
+def compare_with_paper(ours: pd.DataFrame, tolerance: float = 0.02) -> pd.DataFrame:
     """Mean Accuracy/F1 per config vs the paper; ``ok`` if both are within ``tolerance``."""
     paper = pd.read_csv(PAPER_SUMMARY)
     paper = paper[paper.set.isin(ours.set.unique())]

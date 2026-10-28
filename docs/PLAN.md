@@ -95,7 +95,8 @@ Evidence comes from the code, the saved models and the CV logs in `Results/Resul
      nt 1–10 variant can be added later as a separate, explicitly named config.
 5. **ΔG_open threshold.** The code semantics are kept: remove a site if ΔG_open > +10, as in
    `AccessibilityEnergy;10`. Gate 1's AE configs confirm or refute this empirically.
-6. **Tolerance for folding-related differences is ±0.03** (accuracy and F1 per config), so the
+6. **Tolerance for folding-related differences is ±0.02** (accuracy and F1 per config; ±0.03 until 2026-10-28,
+   when the owner set 0.02 for every non-AUC gate criterion), so the
    ViennaRNA **2.7.2 bindings are the default backend**. 2.2.5 stays available for exact
    reproduction.
 7. **No dataset rebuild from raw sources in v1** (see §7).
@@ -396,8 +397,8 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
 * **Gate 0: network fidelity.** The imported DL4J model reproduces recorded site predictions to
   ≤ 1e-5 (max abs) on every site in the shipped result files.
 * **Gate 1: pipeline fidelity (paper model, port only).** Always run with `--original-weights`.
-  * With the default ViennaRNA 2.7.2 bindings backend: mean accuracy and F1 within **±0.03** of
-    GlobalSummary for every config (folding tolerance agreed 2026-10-27), and the drift reported
+  * With the default ViennaRNA 2.7.2 bindings backend: mean accuracy and F1 within **±0.02** of
+    GlobalSummary for every config (±0.03 agreed 2026-10-27, tightened to ±0.02 on 2026-10-28), and the drift reported
     in `docs/parity.md`.
   * With the 2.2.5 CLI backend: TP/FP/TN/FN equal GlobalSummary per set and per config. Fewer than
     0.5 % of pairs may differ, each explained.
@@ -405,8 +406,9 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
 * **Gate 2: retrained model (pyMIRAW training stack): non-inferiority.** Rule agreed 2026-10-27, replacing
   the earlier "mean at least as high as the paper". Folding is held fixed so the gate measures only the
   network. A retrained model passes if, for every row below, the **one-sided 99 % lower confidence bound
-  of the paired difference (ours - paper) is above -margin**, with margins 0.01 for
-  accuracy and F1 and 0.005 for AUC (`pymiraw.evaluation.noninferiority`: `CONFIDENCE`, `MARGINS`, `METHOD`).
+  of the paired difference (ours - paper) is above -margin**, with margins **0.02 for
+  accuracy and F1** (0.01 until 2026-10-28; widened post hoc by the owner after the paired results, to one value for
+  all non-AUC gate criteria, the same as Gate 1) and 0.005 for AUC (`pymiraw.evaluation.noninferiority`: `CONFIDENCE`, `MARGINS`, `METHOD`).
   Bound (changed 2026-10-28, owner decision, **after** the paired results were seen): exact Wilcoxon signed-rank
   bound of the Hodges-Lehmann estimate, so that large wins count by rank and do not widen the bound. Until then
   it was the t-based bound of the mean (`method="t"`), under which large wins inflate the SD.

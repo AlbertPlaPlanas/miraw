@@ -18,7 +18,7 @@ import numpy as np
 from scipy import stats
 
 CONFIDENCE = 0.99  # one-sided; agreed 2026-10-27 (replaces the strict "mean >= paper" rule)
-MARGINS = {"Accuracy": 0.01, "F1": 0.01, "AUC": 0.005}  # largest acceptable drop per metric
+MARGINS = {"Accuracy": 0.02, "F1": 0.02, "AUC": 0.005}  # largest acceptable drop; acc/F1 0.01 -> 0.02 on 2026-10-28
 METHOD = "rank"  # agreed 2026-10-28 (replaces "t")
 
 

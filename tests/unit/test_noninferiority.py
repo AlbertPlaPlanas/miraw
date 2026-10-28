@@ -13,7 +13,7 @@ from pymiraw.evaluation.noninferiority import (
 
 
 def test_agreed_settings():
-    assert CONFIDENCE == 0.99 and MARGINS == {"Accuracy": 0.01, "F1": 0.01, "AUC": 0.005} and METHOD == "rank"
+    assert CONFIDENCE == 0.99 and MARGINS == {"Accuracy": 0.02, "F1": 0.02, "AUC": 0.005} and METHOD == "rank"
 
 
 def test_identical_models_are_non_inferior():
@@ -37,7 +37,7 @@ def test_higher_confidence_gives_lower_bound():
 
 def test_margin_is_per_metric_and_boundary_is_exclusive():
     d = np.array([-0.0075] * 5) + np.array([0.0, 1e-9, -1e-9, 0.0, 1e-9])  # lower bound ~ -0.0075
-    assert non_inferiority(d, "Accuracy", method="t").non_inferior  # margin 0.01
+    assert non_inferiority(d, "Accuracy", method="t").non_inferior  # margin 0.02
     assert not non_inferiority(d, "AUC", method="t").non_inferior  # margin 0.005
     assert non_inferiority(d, "AUC", margins={"AUC": 0.0075 + 1e-3}, method="t").non_inferior
 
@@ -50,7 +50,9 @@ def test_needs_two_points():
 
 
 def test_slack_reports_fragility():
-    v = non_inferiority([-0.0099, -0.0101, -0.01, -0.0099, -0.0101], "Accuracy", confidence=0.5, method="t")
+    v = non_inferiority(
+        [-0.0099, -0.0101, -0.01, -0.0099, -0.0101], "Accuracy", confidence=0.5, margins={"Accuracy": 0.01}, method="t"
+    )
     assert abs(v.slack) < 1e-3
 
 

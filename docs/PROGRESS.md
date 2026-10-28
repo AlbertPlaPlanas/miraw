@@ -10,8 +10,8 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 0 Bootstrap (env, skeleton, S3, hooks, CI) | **done**, `conda-lock.yml` generated (linux-64); not done: Java reference env (`environment-reference.yml`) not created; only the original weights are mirrored to S3 (the 1 GB archive is not) |
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
-| 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all means within 0.005) |
-| 4 Training stack | **done**; Gate 2 (rank-based test) **FAILS** on 2 rows: site accuracy (lower -0.0109, limit -0.01) and paired gene-level accuracy per fold (lower -0.0195); all other rows pass (see Log 21:40); not promoted |
+| 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all config means within 0.005; tolerance now 0.02) |
+| 4 Training stack | **done; Gate 2 PASSED** (rank-based bound, margins acc/F1 0.02, AUC 0.005; set post hoc, see Log 22:00); fragile rows: paired gene accuracy (slack 0.0005), site AUC (0.0009). Not promoted (owner decision needed) |
 | 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, AE configs for seeds 1-2 of fold 6 |
 
 ## Gate results so far
@@ -20,10 +20,10 @@ Plan and decisions: [PLAN.md](PLAN.md).
   0.9351428571 equals the paper's `BestModelEval.txt` value to all digits.
 * **Gate 1 (pipeline vs paper, original weights, ViennaRNA 2.7.2 bindings):** PASSED, 100/100 runs, all config means within
   0.003 accuracy / 0.005 F1 of the GlobalSummary (Log 02:30); bit-exact with ViennaRNA 2.2.5 (Log 01:00).
-* **Gate 2 (retrained model, `old-default`, rank-based test since 21:40):** **FAIL on 2 of 10 verdict rows** (`scripts/gate2_report.py`).
-  Site acc FAIL (HL -0.0016, lower -0.0109), site AUC PASS (fragile); gene per cell acc/F1 PASS; gene paired per fold F1 PASS
-  (+0.0066, lower -0.0044), accuracy FAIL (+0.0015, lower -0.0195). The paper's own fold models fail the analogous per-fold check by more.
-  Not promoted; the original weights stay the default.
+* **Gate 2 (retrained model, `old-default`):** **PASSED** under the rule as of 2026-10-28 22:00 (rank-based bound, 99 %, margins
+  accuracy/F1 0.02, AUC 0.005; both changes post hoc, owner decisions). Lower bounds: site acc -0.0109, site AUC -0.0041 (fragile, slack
+  0.0009); gene per cell acc -0.0013 / F1 -0.0035; gene paired per fold acc -0.0195 (**fragile, slack 0.0005**) / F1 -0.0044. Under the
+  original margins (0.01) it fails on site acc and paired gene acc. Not promoted; the original weights stay the default.
 * **Orientation experiment (`old-default` vs `natural`):** DECIDED: keep `old-default`. `natural` is significantly better at site
   level (paper regime: AUC +0.0015, acc +0.0057, p <= 0.002) but not at gene level (F1 -0.006 vs old-default, p = 0.76).
 
@@ -31,7 +31,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 * Gate 1: `pymiraw parity <balanced10 dir> --output-dir runs/parity --cache-dir ~/.cache/pymiraw/foldcache --sets 0-9 --workers 14`
   (log `runs/parity.log`; resumable: rerun the same command; results land in `runs/parity/<config>_<set>/`;
-  final comparison in `runs/parity/comparison.csv`; exit code 0 only if every config is within 0.03).
+  final comparison in `runs/parity/comparison.csv`; exit code 0 only if every config is within the tolerance, 0.02 since 2026-10-28).
 * Gate 2 / orientation: `pymiraw train <folds dir> --orientation {old-default,natural} --folds 0-8 --seeds 3`
   (logs `runs/train_<orientation>.log`, results `runs/train_<orientation>/cv_<orientation>.csv`).
 
@@ -67,6 +67,16 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-28 (22:00): **Margins: 0.02 for every non-AUC gate criterion (owner decision, post hoc). Gate 2 now PASSES; Gate 1 still passes.**
+  Gate 2 accuracy/F1 margins 0.01 -> 0.02 (`MARGINS` in `pymiraw.evaluation.noninferiority`), AUC stays 0.005; Gate 1 tolerance
+  0.03 -> 0.02 (`pymiraw parity --tolerance` default, `evaluation/parity.py`). Gate 1 at 0.02: PASS (largest config mean difference
+  0.0049, `docs/results/gate1_comparison.csv`). `scripts/gate2_report.py`: **OVERALL PASS** (exit 0); fragile rows: paired gene accuracy
+  per fold (lower -0.0195 vs -0.02, slack 0.0005) and old-default site AUC (slack 0.0009). Diagnostic: the paper's own fold models vs the
+  GlobalSummary would still fail the unpaired per-fold accuracy check (-0.0262). Options considered and rejected: per-fold tests (stricter:
+  folds 2, 5, 8 fail), pooling the 900 (fold, config, set) cells as independent units (passes, +0.0005, but counts each model 100 times),
+  two-sample comparison of the fold models (-0.018 at margin 0.01). The margin was chosen after seeing the results; 0.02 is passed with
+  0.0005 to spare. 111 unit tests pass. Promotion of a retrained model is still an owner decision; the original weights stay the default.
 
 * 2026-10-28 (21:40): **Gate 2 test is now rank-based (owner: wins must not penalise us); result: OVERALL FAIL on 2 rows.**
   `pymiraw.evaluation.noninferiority`: `METHOD = "rank"` = exact one-sided 99 % Wilcoxon signed-rank lower bound of the Hodges-Lehmann
