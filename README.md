@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.png" alt="pyMIRAW logo" width="480">
+</p>
+
 # pyMIRAW
 
 [![CI](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/ci.yml)
