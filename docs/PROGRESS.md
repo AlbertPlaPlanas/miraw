@@ -79,8 +79,10 @@ Plan and decisions: [PLAN.md](PLAN.md).
   (`sites_dir:` in YAML), `--require-sites` (LookupError instead of folding). Scores, filter results and filter energies are not
   stored (the accessibility filter still folds its 200 nt window). Tests: `tests/unit/test_site_store.py` (round trip, empty pairs,
   copies, key sensitivity, second run does 0 folding calls); 105 unit tests pass in the scratch venv (the 1 failure there is
-  `py7zr` missing in it); ruff clean. **Not yet run with real ViennaRNA** (no `pymiraw` env on this machine): check that a second
-  `pymiraw evaluate ... --sites-dir` run gives identical `targetPredictionOutput.csv` and does no folding. Docs: `docs/data.md`.
+  `py7zr` missing in it); ruff clean. **Verified with real ViennaRNA 2.7.2** (pip `ViennaRNA` in the scratch venv) and the original weights on
+  `tests/fixtures/paper_pairs.tsv` (6 pairs): `pymiraw evaluate ... --original-weights --sites-dir S` run 1 folds and writes one shard,
+  run 2 loads it (4.7 s -> 2.5 s, mostly start-up), and `targetPredictionOutput.csv` and `targetSites.csv` are byte-identical to a run without
+  `--sites-dir`; `--require-sites` with another finder raises. Not yet timed on a full balanced set. Docs: `docs/data.md`.
 
 * 2026-10-28 (10:20): **Gate 2 gene level, `old-default` retrained fold-6 models on all 10 balanced sets.** Finished runs
   (`runs/gene_full.sh`): seed 0 on all 10 configs (NF and AE), seeds 1-2 on the 5 NF configs, 100 (config, set) cells.
