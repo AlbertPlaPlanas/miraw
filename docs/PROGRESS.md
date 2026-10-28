@@ -68,6 +68,11 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (22:30): README restructured into three sections with an index: (1) comparison with the original miRAW (results,
+  why retraining differs, feature table), (2) usage (install, data, CLI, Python library), (3) status (gates table, done, remaining).
+  The two Python library examples were run on `tests/fixtures/paper_pairs.tsv` with the original weights (TMEM136 / miR-129-1-3p:
+  Prediction 0.997 with AccessibilityEnergy;10).
+
 * 2026-10-28 (22:15): README: new section "How close is pyMIRAW to the original miRAW?": identical with the original checkpoints
   (bit-exact with ViennaRNA 2.2.5; within 0.005 with 2.7.2), comparable when training from scratch (Gate 2 with the 0.02 margins, post hoc,
   fragile paired gene accuracy). Explanations given (plausible, not tested individually): different RNG/initialisation and unrecorded paper
