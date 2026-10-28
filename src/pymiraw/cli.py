@@ -31,6 +31,8 @@ def _run(
     limit,
     evaluate,
     vienna_bin=None,
+    sites_dir=None,
+    require_sites=False,
 ):
     from pymiraw.config import PredictConfig, load_config, resolve_model_path
     from pymiraw.evaluation.metrics import gene_level_metrics
@@ -48,6 +50,8 @@ def _run(
         "filters": list(filters) if filters else None,
         "original_weights": True if original_weights else None,
         "vienna_bin": vienna_bin,
+        "sites_dir": sites_dir,
+        "require_sites": True if require_sites else None,
     }
     base.update({k: v for k, v in overrides.items() if v is not None})
     cfg = PredictConfig(**base)
@@ -62,6 +66,8 @@ def _run(
         "max_site_length": cfg.max_site_length,
         "seed_alignment_offset": cfg.seed_alignment_offset,
         "cache_dir": cfg.cache_dir,
+        "sites_dir": cfg.sites_dir,
+        "require_sites": cfg.require_sites,
     }
     results = predict_file(cfg.input_file, run_cfg, cfg.workers, limit)
     df = results_frame(results)
@@ -93,6 +99,14 @@ def predict(
     vienna_bin: str = typer.Option(
         None, "--vienna-bin", help="Folder with RNAcofold/RNAfold for --backend cli (e.g. the pymiraw-ref env bin)."
     ),
+    sites_dir: str = typer.Option(
+        None,
+        "--sites-dir",
+        help="Folder of saved candidate sites: reuse them (no ViennaRNA) and save newly computed ones.",
+    ),
+    require_sites: bool = typer.Option(
+        False, "--require-sites", help="With --sites-dir: fail if a pair has no saved sites."
+    ),
 ):
     """Predict miRNA-gene targets."""
     _run(
@@ -109,6 +123,8 @@ def predict(
         limit,
         False,
         vienna_bin,
+        sites_dir,
+        require_sites,
     )
 
 
@@ -128,6 +144,14 @@ def evaluate(
     vienna_bin: str = typer.Option(
         None, "--vienna-bin", help="Folder with RNAcofold/RNAfold for --backend cli (e.g. the pymiraw-ref env bin)."
     ),
+    sites_dir: str = typer.Option(
+        None,
+        "--sites-dir",
+        help="Folder of saved candidate sites: reuse them (no ViennaRNA) and save newly computed ones.",
+    ),
+    require_sites: bool = typer.Option(
+        False, "--require-sites", help="With --sites-dir: fail if a pair has no saved sites."
+    ),
 ):
     """Predict and compare against the Positive_Negative labels (TP/FP/TN/FN, accuracy, F1...)."""
     _run(
@@ -144,6 +168,8 @@ def evaluate(
         limit,
         True,
         vienna_bin,
+        sites_dir,
+        require_sites,
     )
 
 
@@ -200,6 +226,7 @@ def parity(
     backend: str = typer.Option("bindings"),
     cache_dir: str = typer.Option(None),
     workers: int = typer.Option(None),
+    sites_dir: str = typer.Option(None, "--sites-dir", help="Folder of saved candidate sites (reused and extended)."),
     tolerance: float = typer.Option(0.03, help="Allowed |mean diff| for accuracy and F1."),
     vienna_bin: str = typer.Option(
         None, "--vienna-bin", help="Folder with RNAcofold/RNAfold for --backend cli (e.g. the pymiraw-ref env bin)."
@@ -223,6 +250,7 @@ def parity(
         cache_dir,
         workers,
         backend_args={"bin_dir": vienna_bin} if vienna_bin else None,
+        sites_dir=sites_dir,
     )
     cmp = compare_with_paper(ours, tolerance)
     cmp.index = [f"{DISPLAY[i.split('|')[0]]} {i.split('|')[1]}" for i in cmp.index]

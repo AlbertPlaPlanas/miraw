@@ -29,6 +29,8 @@ class PredictConfig(BaseModel):
     backend: str = "bindings"
     vienna_bin: str | None = None  # folder with RNAcofold/RNAfold for backend "cli" (e.g. the 2.2.5 reference env)
     cache_dir: str | None = None
+    sites_dir: str | None = None  # directory of saved candidate sites: load what exists, save what is computed
+    require_sites: bool = False  # with sites_dir: fail instead of running ViennaRNA for pairs not saved
     workers: int | None = None
 
     @model_validator(mode="after")

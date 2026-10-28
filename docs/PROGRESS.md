@@ -71,6 +71,17 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (11:30): **Saved candidate sites (`--sites-dir`).** New `src/pymiraw/sites/store.py` (`SiteStore`): the sites found with
+  ViennaRNA are written per pair as parquet shards (`sites-<id>.parquet`, append-only, atomic) and loaded on later runs, so only the
+  network/filters run again. Key = sha1(backend name+version, finder class+all settings, miRNA, 3'UTR); pairs without sites are stored
+  as marker rows (distinct from "never computed"). `predict_file` looks every pair up in the main process, passes saved sites to the
+  workers, computes only the misses and saves them afterwards. Options: `--sites-dir DIR` on `predict`/`evaluate`/`parity`
+  (`sites_dir:` in YAML), `--require-sites` (LookupError instead of folding). Scores, filter results and filter energies are not
+  stored (the accessibility filter still folds its 200 nt window). Tests: `tests/unit/test_site_store.py` (round trip, empty pairs,
+  copies, key sensitivity, second run does 0 folding calls); 105 unit tests pass in the scratch venv (the 1 failure there is
+  `py7zr` missing in it); ruff clean. **Not yet run with real ViennaRNA** (no `pymiraw` env on this machine): check that a second
+  `pymiraw evaluate ... --sites-dir` run gives identical `targetPredictionOutput.csv` and does no folding. Docs: `docs/data.md`.
+
 * 2026-10-28 (10:20): **Gate 2 gene level, `old-default` retrained fold-6 models on all 10 balanced sets.** Finished runs
   (`runs/gene_full.sh`): seed 0 on all 10 configs (NF and AE), seeds 1-2 on the 5 NF configs, 100 (config, set) cells.
   Mean over cells (ours - paper): **accuracy +0.0059, F1 +0.0047**; F1 >= paper in 70/100 cells; mean per config within

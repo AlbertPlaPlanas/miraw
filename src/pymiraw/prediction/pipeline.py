@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
@@ -19,6 +20,9 @@ from pymiraw.models.base import SiteClassifier
 from pymiraw.sites.candidate import CandidateSite
 from pymiraw.sites.filters.accessibility import get_filter
 from pymiraw.sites.finders.registry import get_site_finder
+from pymiraw.sites.store import SiteStore, backend_id, pair_key
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -48,8 +52,12 @@ class Predictor:
         x = torch.from_numpy(self.encoder.encode_batch(mirna, [s.transcript for s in sites]))
         return self.model.site_score(x).numpy()
 
-    def predict_pair(self, mirna: str, utr: str, gene_name="", ensembl_id="", label=None) -> PairResult:
-        sites = self.finder.find_candidates(mirna, utr, self.folds)
+    def predict_pair(
+        self, mirna: str, utr: str, gene_name="", ensembl_id="", label=None, sites: list[CandidateSite] | None = None
+    ) -> PairResult:
+        """Predict one pair. ``sites`` = pre-computed candidate sites (skips the ViennaRNA site search)."""
+        if sites is None:
+            sites = self.finder.find_candidates(mirna, utr, self.folds)
         scores = self.score_sites(mirna, sites)
         final, removed = [], 0
         for site, score in zip(sites, scores, strict=True):
@@ -86,8 +94,8 @@ def _init_worker(cfg: dict) -> None:
 
 def _run_row(row: tuple) -> PairResult:
     assert _WORKER is not None
-    gene, ens, mirna, mirna_seq, utr, label = row
-    res = _WORKER.predict_pair(mirna_seq, utr, gene, ens, label)
+    gene, ens, mirna, mirna_seq, utr, label, sites = row
+    res = _WORKER.predict_pair(mirna_seq, utr, gene, ens, label, sites)
     res.mirna = mirna
     return res
 
@@ -100,7 +108,9 @@ def read_unified(path: str | Path) -> pd.DataFrame:
 
 def predict_file(input_file: str | Path, cfg: dict, workers: int | None = None, limit: int | None = None):
     """Run the whole pipeline on a unified file. ``cfg`` keys: model, finder, filters, backend,
-    max_site_length, seed_alignment_offset, cache_dir. Returns the list of PairResult."""
+    max_site_length, seed_alignment_offset, cache_dir, and optionally ``sites_dir`` (directory of saved
+    candidate sites: pairs found there skip ViennaRNA, new pairs are computed and saved) and
+    ``require_sites`` (error out instead of computing missing pairs). Returns the list of PairResult."""
     df = read_unified(input_file)
     if limit:
         df = df.head(limit)
@@ -109,12 +119,42 @@ def predict_file(input_file: str | Path, cfg: dict, workers: int | None = None, 
         (r.gene_name, r.EnsemblId, r.miRNA, r.mirna_seq, r.utr, int(r.Positive_Negative) if has_label else None)
         for r in df.itertuples()
     ]
+    store, keys = None, []
+    if cfg.get("sites_dir"):
+        store, keys = _open_store(cfg, rows)
+    # attach the saved sites (or None = compute them) as the last element of each row
+    saved = [store.get(k) for k in keys] if store is not None else [None] * len(rows)
+    rows = [(*r, sites) for r, sites in zip(rows, saved, strict=True)]
+    missing = [i for i, r in enumerate(rows) if store is not None and r[-1] is None]
+    if missing and cfg.get("require_sites"):
+        raise LookupError(
+            f"{len(missing)} of {len(rows)} pairs have no saved sites in {cfg['sites_dir']} "
+            "(they were saved with other finder settings, backend/version, or never computed)"
+        )
+    if store is not None:
+        log.info(
+            "sites store %s: %d pairs loaded, %d to compute", cfg["sites_dir"], len(rows) - len(missing), len(missing)
+        )
     workers = workers or os.cpu_count() or 1
     if workers == 1:
         _init_worker(cfg)
-        return [_run_row(r) for r in rows]
-    with ProcessPoolExecutor(workers, initializer=_init_worker, initargs=(cfg,)) as ex:
-        return list(ex.map(_run_row, rows, chunksize=1))
+        results = [_run_row(r) for r in rows]
+    else:
+        with ProcessPoolExecutor(workers, initializer=_init_worker, initargs=(cfg,)) as ex:
+            results = list(ex.map(_run_row, rows, chunksize=1))
+    if store is not None:
+        for i in missing:  # save what was just computed so the next run can skip it
+            store.add(keys[i], results[i].sites)
+        store.flush()
+    return results
+
+
+def _open_store(cfg: dict, rows: list[tuple]) -> tuple[SiteStore, list[str]]:
+    """Open the sites directory and compute the store key of every row (needs the backend version)."""
+    backend = make_backend(cfg["backend"], **cfg.get("backend_args", {}))
+    finder = get_site_finder(cfg["finder"], cfg["max_site_length"], cfg["seed_alignment_offset"])
+    bid = backend_id(backend)
+    return SiteStore(cfg["sites_dir"]), [pair_key(bid, finder, r[3], r[4]) for r in rows]
 
 
 def results_frame(results: list[PairResult]) -> pd.DataFrame:

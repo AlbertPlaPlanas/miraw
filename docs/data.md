@@ -40,6 +40,21 @@ The weights are looked up in this order: `$PYMIRAW_ORIGINAL_WEIGHTS`,
 
 * Folding results are memoised in `~/.cache/pymiraw/foldcache` (`--cache-dir`), keyed by sequences,
   constraint, backend and ViennaRNA version. It is safe to delete; the first run after that is slow.
+* **Saved candidate sites** (`--sites-dir DIR`): the binding sites found with ViennaRNA are saved per pair as
+  parquet shards in `DIR` and loaded on later runs, so only the network and filters run again. Use it on
+  `predict`, `evaluate` and `parity`, or `sites_dir:` in a YAML config:
+
+  ```bash
+  pymiraw evaluate pairs.tsv --finder miRAW --sites-dir sites/   # first run: folds and saves
+  pymiraw evaluate pairs.tsv --finder miRAW --sites-dir sites/ --model my_model.pt   # no ViennaRNA
+  pymiraw evaluate pairs.tsv --sites-dir sites/ --require-sites  # error if a pair is not saved
+  ```
+
+  A pair is reused only if the miRNA, the 3'UTR, all finder settings and the folding backend and version
+  are identical (they are hashed into its key); otherwise it is computed and added as a new shard. The
+  directory can be copied between machines. The model score and the accessibility filter are not stored
+  (the filter folds the 200 nt UTR window itself). Unlike `--cache-dir`, which memoises raw window
+  folds, this stores the final candidate sites and is independent of the folding library at load time.
 * `runs/` holds benchmark and training output and is gitignored.
 
 ## Licences
