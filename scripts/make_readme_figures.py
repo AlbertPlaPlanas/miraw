@@ -82,10 +82,15 @@ def gate1(t, name):
         fig,
         t,
         "With the original weights, pyMIRAW reproduces the published benchmark",
-        "Mean over the paper's 10 balanced test sets per configuration (finder, NF = no filter, AE = accessibility filter)",
+        "Mean over the paper's 10 balanced test sets per configuration "
+        "(finder, NF = no filter, AE = accessibility filter)",
     )
     fig.subplots_adjust(left=0.12, right=0.98, top=0.77, bottom=0.08, wspace=0.08)
-    fig.savefig(out / f"{name}-{'dark' if t is THEMES['dark'] else 'light'}.svg", facecolor=t["surface"])
+    fig.savefig(
+        out / f"{name}-{'dark' if t is THEMES['dark'] else 'light'}.svg",
+        facecolor=t["surface"],
+        metadata={"Date": None},
+    )
     plt.close(fig)
 
 
@@ -161,13 +166,19 @@ def gate2(t, name):
         "Each dot is one fold's model (pyMIRAW: mean over its seeds). Same folds, pipeline and ViennaRNA for both.",
     )
     fig.subplots_adjust(left=0.07, right=0.985, top=0.72, bottom=0.12, wspace=0.16)
-    fig.savefig(out / f"{name}-{'dark' if t is THEMES['dark'] else 'light'}.svg", facecolor=t["surface"])
+    fig.savefig(
+        out / f"{name}-{'dark' if t is THEMES['dark'] else 'light'}.svg",
+        facecolor=t["surface"],
+        metadata={"Date": None},
+    )
     plt.close(fig)
 
 
 if __name__ == "__main__":
     out.mkdir(parents=True, exist_ok=True)
-    plt.rcParams.update({"font.family": "sans-serif", "svg.fonttype": "none", "font.size": 9})
+    plt.rcParams.update(
+        {"font.family": "sans-serif", "svg.fonttype": "none", "font.size": 9, "svg.hashsalt": "pymiraw"}
+    )
     for theme in THEMES.values():
         gate1(theme, "gate1_parity")
         gate2(theme, "gate2_folds")

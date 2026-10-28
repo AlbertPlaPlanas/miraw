@@ -68,6 +68,15 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (23:00): README figures and citation. New: a pipeline flow diagram (Mermaid), two charts (light/dark SVGs in
+  `docs/figures/`, drawn from the committed result files by `scripts/make_readme_figures.py`; byte-reproducible; needs matplotlib,
+  not a package dependency): Gate 1 per-configuration differences vs the ±0.02 tolerance, and Gate 2 per-fold site/gene accuracy
+  of pyMIRAW vs the paper's own fold models. Citation section + `CITATION.cff` (preferred citation: Pla, Zhong & Rayner 2018, PLoS
+  Comput Biol 14(7): e1006185, doi 10.1371/journal.pcbi.1006185; checked on journals.plos.org). Colours: dataviz reference palette
+  slots 1-2 (its documented validation; the validator script needs Node.js, not installed here). **Speed vs the original: not
+  claimed**: the original `miRAW.jar` has not been timed on this machine (part of the open oracle-run item), so there is no
+  like-for-like number.
+
 * 2026-10-28 (22:30): README restructured into three sections with an index: (1) comparison with the original miRAW (results,
   why retraining differs, feature table), (2) usage (install, data, CLI, Python library), (3) status (gates table, done, remaining).
   The two Python library examples were run on `tests/fixtures/paper_pairs.tsv` with the original weights (TMEM136 / miR-129-1-3p:
