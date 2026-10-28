@@ -68,6 +68,12 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-28 (22:15): README: new section "How close is pyMIRAW to the original miRAW?": identical with the original checkpoints
+  (bit-exact with ViennaRNA 2.2.5; within 0.005 with 2.7.2), comparable when training from scratch (Gate 2 with the 0.02 margins, post hoc,
+  fragile paired gene accuracy). Explanations given (plausible, not tested individually): different RNG/initialisation and unrecorded paper
+  seeds; DL4J/ND4J CPU vs PyTorch/cuBLAS GPU float32 summation order amplified by SGD (2,800 updates); framework details (Nesterov
+  formulation, how the best-epoch training loss is measured); gene-level amplification of small site-level calibration shifts.
+
 * 2026-10-28 (22:00): **Margins: 0.02 for every non-AUC gate criterion (owner decision, post hoc). Gate 2 now PASSES; Gate 1 still passes.**
   Gate 2 accuracy/F1 margins 0.01 -> 0.02 (`MARGINS` in `pymiraw.evaluation.noninferiority`), AUC stays 0.005; Gate 1 tolerance
   0.03 -> 0.02 (`pymiraw parity --tolerance` default, `evaluation/parity.py`). Gate 1 at 0.02: PASS (largest config mean difference

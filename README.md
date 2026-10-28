@@ -84,6 +84,34 @@ models pass Gate 2 (non-inferiority within 0.02 accuracy/F1 and 0.005 AUC, margi
 **Remaining:** a decision on promoting a retrained model, the `miRAW.jar` oracle run, Gate 3 (full unbalanced set), profiling, PyPI packaging and the
 `v1.0.0` release. Details: [docs/PROGRESS.md](docs/PROGRESS.md).
 
+### How close is pyMIRAW to the original miRAW?
+
+* **With the original checkpoints (`--original-weights`, the default): identical results.** With the ViennaRNA version
+  the paper used (2.2.5) the port is bit-exact: same candidate sites, same site scores (max difference 0.00000) and same
+  gene calls. With the default ViennaRNA 2.7.2 the network is still identical, but ViennaRNA's energy parameters changed
+  between versions, so a few borderline sites are found differently; all 10 configurations stay within 0.005 accuracy and
+  F1 of the published results (Gate 1).
+* **Training from scratch (same recipe, same folds): comparable results, not identical ones.** Retrained models match the
+  paper's on average (site-level accuracy -0.002 and AUC -0.001 versus the paper's own fold models; gene-level accuracy and
+  F1 within 0.005) and pass the non-inferiority test of Gate 2 (99 % one-sided bound within 0.02 accuracy/F1 and 0.005 AUC;
+  margins set after the results were known, and paired gene-level accuracy passes with little slack). Individual models,
+  ours and the paper's alike, differ by up to about ±0.03 in gene-level accuracy from fold to fold.
+
+Why retraining does not give the same weights, even though the recipe is the same (Nesterov SGD, momentum 0.9, learning
+rate 0.005, batch 50, XENT loss, Xavier initialisation, 10 epochs, file order):
+
+1. **Random initialisation.** DL4J/ND4J and PyTorch use different random number generators, and the paper's seeds are not
+   recorded, so the networks start from different Xavier draws and converge to different (equally good) minima.
+2. **Numerical backend.** The original was trained with DL4J on ND4J (Java, CPU BLAS); pyMIRAW trains with PyTorch, here on a
+   GPU (cuBLAS, non-deterministic kernels). Different float32 summation orders give differences of ~1e-7 per step, which
+   SGD amplifies over the 2,800 updates of training (280 per epoch) into different final weights.
+3. **Framework details.** Small implementation differences, for example in how the Nesterov update is formulated and how the
+   training loss used to pick the best epoch is measured (DL4J scores the network after the epoch, Lightning averages the
+   mini-batch losses during it), can select a different epoch.
+4. **Amplification at gene level.** A gene is predicted as a target if one of its many candidate sites scores positive, so
+   a small shift in a model's site-level decision point changes gene-level specificity a lot. This is why retrained models
+   agree closely with the paper at site level but vary more at gene level, as the paper's own fold models do.
+
 ## Commands
 
 | | |
