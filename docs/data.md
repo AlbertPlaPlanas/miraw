@@ -20,7 +20,8 @@ curl -L -o PLOSComb.7z https://bitbucket.org/bipous/miraw_data/raw/master/PLOSCo
 pymiraw data unpack-archive PLOSComb.7z          # unpacks the parts pyMIRAW uses into data/original/
 ```
 
-`data/original/` is gitignored.
+`data/original/` is gitignored. In a source checkout the paper data goes there; for an installed package
+(`pip install pymiraw`) the default is `~/.cache/pymiraw/original`. `PYMIRAW_DATA_DIR` overrides both.
 
 The original weights are `$PYMIRAW_ORIGINAL_WEIGHTS` if set (a `.pt` or DL4J `.bin` file), else the bundled copy;
 nothing is downloaded. The project's S3 mirror (`data/manifest.yaml`, sha256 verified, credentials required) is only an

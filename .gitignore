@@ -14,3 +14,4 @@ __pycache__/
 runs/
 data/original/
 notebooks/pymiraw_tutorial_output/
+.hypothesis/
