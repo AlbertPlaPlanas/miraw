@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python=3.12
   - viennarna=2.7.2
+  - libopenblas  # the Bioconda viennarna build links libopenblas.so.0 without declaring it (with MKL BLAS it is missing)
   - pytorch>=2.5
   - lightning>=2.4
   - numpy

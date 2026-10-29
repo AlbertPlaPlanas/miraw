@@ -90,6 +90,14 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-29 (23:30 UTC): **CI fix: ViennaRNA could not load on the GitHub runner** (`ImportError: Failed to load ViennaRNA
+  RNAlib Python wrapper`; 12 tests). Cause: the Bioconda `viennarna` 2.7.2 build links `libopenblas.so.0` but does not declare
+  it; with PyTorch the solver picks MKL BLAS, so the conda env has no OpenBLAS. The dev machine supplied it from the OS
+  (`libopenblas0-pthread`), the runner does not. Unnoticed until the weights were bundled, because the tests that run
+  ViennaRNA used to skip in CI. Fix: `libopenblas` added to `environment.yml`; `conda-lock.yml` updated with
+  `--update libopenblas` (adds libopenblas 0.3.34; 11 dev/AWS tools got patch bumps; numpy, PyTorch and ViennaRNA unchanged);
+  a CI step imports ViennaRNA's compiled module so a missing library is named. Checked: an env installed from the lock file
+  resolves `libopenblas.so.0` inside the env, and the fast tests pass (141 passed, 1 skipped).
 * 2026-10-29 (22:30 UTC): **Gate 3 PASSED; all 10 configurations done.** Gate 3 rule now has an AUC tolerance of 0.005 (owner
   decision): the same AUC margin as Gate 2, so that Gate 3, like Gates 1 and 2, allows for ViennaRNA version differences
   (`scripts/gate3.py` uses `MARGINS["AUC"]`). miRAW-6-1:10 NF: AUC 0.8225 vs the paper's 0.8228 (diff -0.0003) -> PASS. A small
