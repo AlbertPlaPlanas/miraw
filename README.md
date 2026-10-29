@@ -363,7 +363,7 @@ pymiraw data unpack-archive PLOSComb.7z      # needs the [data] extra
 data/original/Data/TestData/balanced10/                          # the paper's 10 balanced test sets
 data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary/          # the released cross-validation folds
 data/original/NetworkModel/bestModel.bin                         # the original weights (DL4J), source of the bundled copy
-data/original/ResultsCV/VeryDeepXENT14K_e10/Set<k>/bestModel.bin # the paper's 9 cross-validation fold models
+data/original/Results/ResultsCV/VeryDeepXENT14K_e10/Set<k>/bestModel.bin  # the paper's 9 cross-validation fold models
 ```
 
 Then, on 16 cores (times measured on this project's machine with a T4 GPU):
