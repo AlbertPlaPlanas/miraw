@@ -1,0 +1,2 @@
+,pairs,AUC_ours,AUC_paper,AUC_diff,Accuracy_ours,Accuracy_paper,Accuracy_diff,F1_ours,F1_paper,F1_diff,Recall_ours,Recall_paper,Recall_diff,Specificity_ours,Specificity_paper,Specificity_diff,same_call
+miRAW-6-1:10 NF,17043,0.822522,0.822805,-0.000284,0.913396,0.913161,0.000235,0.954181,0.954049,0.000133,0.931737,0.931434,0.000303,0.361314,0.363139,-0.001825,0.999531

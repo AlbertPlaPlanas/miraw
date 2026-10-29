@@ -88,6 +88,15 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-29 (17:55 UTC): **Gate 3, default configuration: FAIL by 0.0003 under the rule as written (AUC >= the paper's).**
+  miRAW-6-1:10 NF on the full unbalanced set (17,043 pairs, original weights, ViennaRNA 2.7.2 bindings): AUC 0.8225 vs the
+  paper's 0.8228 (diff -0.0003); accuracy +0.0002, F1 +0.0001; same call for 99.95 % of pairs. 16,783 predictions identical to
+  the paper's (< 1e-6); 260 differ (246 targets, 14 non-targets), 8 of them change the call. With the paper's scores for just
+  those 14 non-targets the AUC would be 0.8233. Same pattern as Gate 1 (ViennaRNA 2.7.2 vs the paper's 2.2.5 energies).
+  Rule NOT changed (owner's call). Next: re-run the 260 differing pairs with ViennaRNA 2.2.5 (`--backend cli`) to test that
+  explanation. The other 9 configurations are still running (`runs/gate3/gate3.log`). `docs/results/gate3_comparison.csv` holds
+  the miRAW NF row so far.
+
 * 2026-10-29 (09:30): Gate 3 running. miRAW NF chunk 0 (1,000 pairs, all targets: the file lists the 548 non-targets
   last) took 29 min, so miRAW NF needs ~8.5 h (verdict ~17:30); same target/non-target call as the paper for 99.9 % of
   those pairs. The AUC needs the final chunk (the non-targets).
