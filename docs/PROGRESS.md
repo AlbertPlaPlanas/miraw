@@ -61,10 +61,17 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Next steps
 
-1. Read the Gate 1 comparison when `runs/parity/comparison.csv` exists; investigate site-count differences if any config is outside +-0.03.
-2. Read the CV results; if accuracy < 0.921, tune (epochs/patience/lr/batch) before concluding Gate 2; then decide the orientation experiment per PLAN.md decision 8.
-3. Generate `conda-lock.yml`; `environment-reference.yml` and the Java oracle comparison.
-4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
+1. **Gate 3** (running on branch `gate3`): when `scripts/gate3.py` finishes, read `docs/results/gate3_comparison.csv`,
+   record the verdict (miRAW NF AUC vs the paper's 0.8228) and the 10-config comparison here, in PLAN.md and in the README
+   Status; commit, then merge `gate3` into `main`.
+2. **Test the installation in a truly fresh environment**: a machine or container with no ViennaRNA, no PyTorch and none
+   of the other dependencies preinstalled. Run the README's install command as written
+   (`pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"`), then `pymiraw --help`, the README
+   quick start, `pytest` and the tutorial notebook. The 2026-10-28 check used a new venv but with CPU PyTorch installed
+   first; also check a default (CUDA) PyTorch install, macOS and Windows (ViennaRNA wheels), and Python 3.11-3.13.
+3. Owner decision on promoting a retrained model (Gate 2 passed; the original weights stay the default until then).
+4. Run the original `miRAW.jar` side by side (Java oracle, `environment-reference.yml`), also to compare speed.
+5. SpecificZones and ReservedZones filters (unused by the paper); profiling; PyPI packaging; the `v1.0.0` release.
 
 ## Log (newest first)
 
