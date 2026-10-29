@@ -60,6 +60,8 @@ jobs:
         run: |
           pymiraw --help
           python scripts/smoke_installed.py
+          # Linux forks its worker processes; also test spawned ones (the macOS and Windows default)
+          if [ "$RUNNER_OS" = "Linux" ]; then python scripts/smoke_installed.py --spawn; fi
 
   testpypi:
     if: github.event_name == 'workflow_dispatch'

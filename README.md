@@ -166,6 +166,17 @@ r = pymiraw.predict_pair(pair.Mature_mirna_transcript, pair["3UTR_transcript"]) 
 r.prediction, r.is_target                           # (0.9989..., True)
 ```
 
+**In a Python script on macOS or Windows**, put the code under `if __name__ == "__main__":`. pyMIRAW predicts in
+several processes, and there these start by re-running the script (Python's rule for parallel processes; Linux,
+notebooks and `workers=1` do not need it):
+
+```python
+import pymiraw
+
+if __name__ == "__main__":
+    pymiraw.predict("pairs.tsv").save("my_results")
+```
+
 **Command line.** The same, on a file:
 
 ```bash
