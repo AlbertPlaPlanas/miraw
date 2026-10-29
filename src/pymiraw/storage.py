@@ -13,7 +13,21 @@ DEFAULT_MANIFEST = Path(__file__).resolve().parents[2] / "data" / "manifest.yaml
 ORIGINAL_WEIGHTS_KEY = "original-weights"
 ORIGINAL_WEIGHTS_ENV = "PYMIRAW_ORIGINAL_WEIGHTS"  # use another copy of the original weights (.pt or DL4J .bin)
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ORIGINAL_DIR = REPO_ROOT / "data" / "original"  # where `pymiraw data unpack-archive` puts the paper data
+SOURCE_CHECKOUT = (REPO_ROOT / "pyproject.toml").is_file()  # running from a clone, not from an installed wheel
+DATA_DIR_ENV = "PYMIRAW_DATA_DIR"  # where the paper data is unpacked (overrides the default below)
+
+
+def _original_dir() -> Path:
+    """The unpacked paper data: ``$PYMIRAW_DATA_DIR``, else ``data/original`` in a source checkout, else in the
+    user cache."""
+    if os.environ.get(DATA_DIR_ENV):
+        return Path(os.environ[DATA_DIR_ENV])
+    if SOURCE_CHECKOUT:
+        return REPO_ROOT / "data" / "original"
+    return Path(os.environ.get("PYMIRAW_CACHE", Path.home() / ".cache" / "pymiraw")) / "original"
+
+
+ORIGINAL_DIR = _original_dir()  # where `pymiraw data unpack-archive` puts the paper data
 ORIGINAL_DL4J = ORIGINAL_DIR / "NetworkModel" / "bestModel.bin"  # the DL4J source of the bundled weights
 ARCHIVE_URL = "https://bitbucket.org/bipous/miraw_data/raw/master/PLOSComb.7z"
 UNPACK_PATTERNS = (

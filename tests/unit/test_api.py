@@ -36,11 +36,13 @@ def test_public_names_resolve():
 
 
 def test_submodules_and_load_config_work_in_a_fresh_interpreter():
+    import os
     import subprocess
     import sys
 
     code = "import pymiraw; pymiraw.config.load_config; pymiraw.load_config; pymiraw.storage.original_weights_path()"
-    subprocess.run([sys.executable, "-c", code], check=True)
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(sys.path)}  # the child finds pymiraw like this process does
+    subprocess.run([sys.executable, "-c", code], check=True, env=env)
 
 
 def test_bundled_examples():

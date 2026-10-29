@@ -6,6 +6,7 @@
 
 [![CI](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/ci.yml)
 [![Secret scan](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/secrets.yml/badge.svg)](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/secrets.yml)
+[![PyPI](https://img.shields.io/pypi/v/pymiraw)](https://pypi.org/project/pymiraw/)
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.11-blue)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -135,15 +136,17 @@ initialisation, 10 epochs, training file order. The remaining differences are pl
 ### Installation
 
 ```bash
-pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"
+pip install pymiraw
 pymiraw --help                                  # check: lists the commands
 ```
 
-This needs Python 3.11 or later and installs everything needed to predict and to train: PyTorch, ViennaRNA 2.7 and the
-original miRAW weights. Nothing else is downloaded later. No GPU is needed; see
+This needs Python 3.11 or later (Linux, macOS or Windows) and installs everything needed to predict and to train:
+PyTorch, ViennaRNA 2.7 and the original miRAW weights. Nothing else is downloaded later. No GPU is needed; see
 [Running on CPU or GPU](#running-on-cpu-or-gpu) for a smaller CPU-only install and for training on a GPU.
-Optional extras: `pip install "pymiraw[notebook] @ git+..."` (JupyterLab and matplotlib, for the tutorial) and
-`pymiraw[data]` (tools to unpack the paper's data archive, for [reproducing the paper](#reproducing-the-papers-results)).
+Optional extras: `pip install "pymiraw[notebook]"` (JupyterLab and matplotlib, for the tutorial) and
+`pip install "pymiraw[data]"` (tools to unpack the paper's data archive, for
+[reproducing the paper](#reproducing-the-papers-results)). The development version, from GitHub:
+`pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"`.
 
 ### Quick start
 
@@ -186,7 +189,7 @@ and their outputs. It uses only the bundled data and runs in about 3 minutes:
 To run it:
 
 ```bash
-pip install "pymiraw[notebook] @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"
+pip install "pymiraw[notebook]"
 curl -LO https://raw.githubusercontent.com/AlbertPlaPlanas/pyMiraw/main/notebooks/pymiraw_tutorial.ipynb
 jupyter lab pymiraw_tutorial.ipynb
 ```
@@ -409,7 +412,8 @@ Code map (`src/pymiraw/`):
 | `resources/` | bundled weights, the paper's published results, example data |
 | `cli.py` | the `pymiraw` command |
 
-After any change that could affect results, run `make verify-gates`. The design, decisions and gate rules are in
+Releases go to PyPI through a GitHub Actions workflow: see [docs/releasing.md](docs/releasing.md). After any change
+that could affect results, run `make verify-gates`. The design, decisions and gate rules are in
 [docs/PLAN.md](docs/PLAN.md); the work log in [docs/PROGRESS.md](docs/PROGRESS.md); data sources in
 [docs/data.md](docs/data.md).
 

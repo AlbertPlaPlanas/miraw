@@ -44,7 +44,7 @@ If pyMIRAW is not installed yet, run this once (it installs pyMIRAW with everyth
 and the original weights):
 
 ```
-pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"
+pip install pymiraw
 ```
 
 In a notebook you can type `%pip install ...` in a cell instead. Then import it:

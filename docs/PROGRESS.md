@@ -71,24 +71,30 @@ Plan and decisions: [PLAN.md](PLAN.md).
    (`pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"`), then `pymiraw --help`, the README
    quick start, `pytest` and the tutorial notebook. The 2026-10-28 check used a new venv but with CPU PyTorch installed
    first; also check a default (CUDA) PyTorch install, macOS and Windows (ViennaRNA wheels), and Python 3.11-3.13.
-3. **Publish on PyPI** (the name `pymiraw` was free on 2026-10-29): build and publish the wheel and sdist, with a proper
-   PyPI page.
-   * Build: `python -m build` (sdist + wheel; the wheel is 1.8 MB with the bundled weights and examples), `twine check`;
-     check the sdist contents (no `data/`, `runs/`, secrets; decide on `notebooks/`, `docs/results/`, `tests/`).
-   * Metadata in `pyproject.toml`: authors, `[project.urls]` (repository, documentation, issues, paper DOI), classifiers
-     (Python 3.11-3.13, OS, license, Bioinformatics topic), keywords, `license-files`; the version (0.2.0 now) and how
-     it is bumped.
-   * PyPI page: the README is the long description, but PyPI does not render relative links and images (logo, figures),
-     `<picture>` dark-mode switching or Mermaid; use absolute URLs, or a dedicated PyPI README. Install instructions
-     become `pip install pymiraw`.
-   * Publishing: TestPyPI first; then a free GitHub Actions workflow with PyPI trusted publishing (no stored token),
-     triggered by a version tag.
-   * After publishing: test `pip install pymiraw` in a fresh environment (item 2).
+3. **Publish on PyPI**: the package is ready (branch `pypi-package`); what is left needs the owner's accounts.
+   Follow `docs/releasing.md`: add the pending trusted publishers on PyPI and TestPyPI, create the GitHub environments
+   `pypi` and `testpypi`, run the publish workflow manually (TestPyPI and the 3-OS smoke test), then tag `v0.2.0`.
+   After publishing: `pip install pymiraw` in a fresh environment (item 2; the workflow's smoke test already covers a
+   clean install of the wheel on Linux, macOS and Windows).
 4. Owner decision on promoting a retrained model (Gate 2 passed; the original weights stay the default until then).
 5. Run the original `miRAW.jar` side by side (Java oracle, `environment-reference.yml`), also to compare speed.
 6. SpecificZones and ReservedZones filters (unused by the paper); profiling; the `v1.0.0` release.
 
 ## Log (newest first)
+
+* 2026-10-29 (23:55 UTC): **PyPI package ready (branch `pypi-package`).** `pyproject.toml`: version read from
+  `src/pymiraw/__init__.py`, SPDX licence + licence file, author, project URLs, classifiers (Linux/macOS/Windows,
+  Python 3.11-3.13; ViennaRNA 2.7.2 has wheels for 3.10-3.14 on all three), keywords, explicit sdist contents (package,
+  tests, README, LICENSE, CITATION.cff, and the 2 repository files the tests read; the earlier sdist also shipped a local
+  `.hypothesis/` cache, now gitignored). PyPI page via `hatch-fancy-pypi-readme`: relative links/images -> absolute GitHub
+  URLs, anchors -> the GitHub page, Mermaid -> a link; checked with `twine check --strict` and `readme_renderer[md]`
+  (10 images, no relative links). New `.github/workflows/publish.yml` (tag -> PyPI, manual -> TestPyPI, trusted
+  publishing) with a smoke test of the installed wheel on 3 OS x Python 3.11/3.13 (`scripts/smoke_installed.py`:
+  predictions equal known values, workers, training). Locally: a fresh venv with the wheel passes the smoke test; the
+  sdist's own tests pass (138 + the fixed subprocess test; 3 skip without the paper data). Fixes: the paper-data folder
+  of an installed package is now `~/.cache/pymiraw/original` (was inside Python's `lib/`), override `PYMIRAW_DATA_DIR`;
+  a test that started a subprocess relied on `PYTHONPATH`. Install instructions now `pip install pymiraw`; PyPI badge.
+  Release steps: `docs/releasing.md`.
 
 * 2026-10-29 (23:30 UTC): **CI fix: ViennaRNA could not load on the GitHub runner** (`ImportError: Failed to load ViennaRNA
   RNAlib Python wrapper`; 12 tests). Cause: the Bioconda `viennarna` 2.7.2 build links `libopenblas.so.0` but does not declare

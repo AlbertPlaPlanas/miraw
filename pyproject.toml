@@ -1,14 +1,29 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27", "hatch-fancy-pypi-readme>=24"]
 build-backend = "hatchling.build"
 
 [project]
 name = "pymiraw"
-version = "0.2.0"
-description = "Python/PyTorch reimplementation of miRAW (Pla et al., PLoS Comput Biol 2018)"
-readme = "README.md"
+dynamic = ["version", "readme"]  # version: src/pymiraw/__init__.py; readme: README.md with absolute links (below)
+description = "miRNA target prediction with deep learning: a Python/PyTorch reimplementation of miRAW (Pla et al., PLoS Comput Biol 2018)"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Albert Pla Planas" }]
+keywords = ["miRNA", "microRNA", "target prediction", "deep learning", "bioinformatics", "RNA", "ViennaRNA", "miRAW"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 # Everything needed to predict (original weights bundled) and to train. ViennaRNA 2.7.x is the default
 # folding backend (the gates were run with 2.7.2); other versions can be used through `backend="cli"`.
 dependencies = [
@@ -21,11 +36,54 @@ data = ["py7zr", "xlrd", "fsspec", "s3fs"]  # paper archive unpacking, GlobalSum
 notebook = ["jupyterlab", "matplotlib"]
 dev = ["pytest", "pytest-cov", "pytest-xdist", "hypothesis", "ruff", "mypy", "nbformat", "nbclient", "ipykernel"]
 
+[project.urls]
+Homepage = "https://github.com/AlbertPlaPlanas/pyMiraw"
+Documentation = "https://github.com/AlbertPlaPlanas/pyMiraw#readme"
+Tutorial = "https://github.com/AlbertPlaPlanas/pyMiraw/blob/main/notebooks/pymiraw_tutorial.ipynb"
+Issues = "https://github.com/AlbertPlaPlanas/pyMiraw/issues"
+Changelog = "https://github.com/AlbertPlaPlanas/pyMiraw/blob/main/docs/PROGRESS.md"
+Paper = "https://doi.org/10.1371/journal.pcbi.1006185"
+
 [project.scripts]
 pymiraw = "pymiraw.cli:app"
 
+[tool.hatch.version]
+path = "src/pymiraw/__init__.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/pymiraw"]  # includes src/pymiraw/resources (weights, reference tables, examples)
+
+[tool.hatch.build.targets.sdist]
+# the package, its tests and the two repository files the tests read; not the notebooks, docs, CI or env files
+include = [
+  "src/pymiraw", "tests", "README.md", "LICENSE", "CITATION.cff", "pyproject.toml",
+  "data/manifest.yaml", "scripts/check_secrets.py",
+]
+
+# The PyPI page is the README with its relative links and images made absolute (PyPI cannot resolve them),
+# the internal anchors pointed at the GitHub page (PyPI has no heading anchors), and the Mermaid diagram
+# (not rendered on PyPI) replaced by a link.
+[tool.hatch.metadata.hooks.fancy-pypi-readme]
+content-type = "text/markdown"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.fragments]]
+path = "README.md"
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '(?s)```mermaid\n.*?```'
+replacement = '*The pipeline diagram is on the [GitHub page](https://github.com/AlbertPlaPlanas/pyMiraw#how-miraw-predicts-targets).*'
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '(src(?:set)?=")(docs/[^"]+)"'
+replacement = '\1https://raw.githubusercontent.com/AlbertPlaPlanas/pyMiraw/main/\2"'
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '\]\(#([^)]+)\)'
+replacement = '](https://github.com/AlbertPlaPlanas/pyMiraw#\1)'
+
+[[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
+pattern = '\]\((?!https?:|#)([^)]+)\)'
+replacement = '](https://github.com/AlbertPlaPlanas/pyMiraw/blob/main/\1)'
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
