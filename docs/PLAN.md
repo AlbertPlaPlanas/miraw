@@ -438,6 +438,10 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
     `model: original`) remain the default unless the owner decides otherwise, so pyMIRAW is never worse than miRAW.
 * **Gate 3: full unbalanced test set** (`Evaluate_14K_FULL`): AUC ≥ the paper's (> 0.75) for the
   default model.
+  * Run 2026-10-29 (`scripts/gate3.py`; the input file is rebuilt from the paper's results and the original repository's
+    `fullUnifiedFile.csv`): miRAW-6-1:10 NF AUC 0.8225 with ViennaRNA 2.7.2 vs the paper's 0.8228 (-0.0003; 260 of 17,043
+    predictions differ). With ViennaRNA 2.2.5 those 260 equal the paper's and the AUC is the paper's exactly (0.822805).
+    Owner decision pending on whether the rule applies to the 2.7.2 default (as written: fails by 0.0003) or allows a margin.
 
 ---
 

@@ -88,6 +88,14 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-29 (18:30 UTC): **Gate 3 explained: with ViennaRNA 2.2.5 pyMIRAW reproduces the paper exactly.** The 260 pairs whose
+  miRAW NF predictions differed under ViennaRNA 2.7.2 were re-run with ViennaRNA 2.2.5 (`--backend cli`, Bioconda 2.2.5, 1 h 25 min
+  on 4 workers): 260/260 same call, same site counts and same prediction (max |diff| 1.8e-6 = rounding of the paper's printed
+  values). Full-set AUC with those 260 from 2.2.5: 0.822805 = the paper's 0.822805. So the -0.0003 under 2.7.2 is entirely the
+  ViennaRNA energy-parameter change, as in Gate 1. Per-pair values: `docs/results/gate3_differing_pairs_vienna225.csv`.
+  Verdict under the rule as written: PASS with ViennaRNA 2.2.5 (exact), FAIL by 0.0003 with the default 2.7.2; the owner
+  decides how the rule treats the default backend.
+
 * 2026-10-29 (17:55 UTC): **Gate 3, default configuration: FAIL by 0.0003 under the rule as written (AUC >= the paper's).**
   miRAW-6-1:10 NF on the full unbalanced set (17,043 pairs, original weights, ViennaRNA 2.7.2 bindings): AUC 0.8225 vs the
   paper's 0.8228 (diff -0.0003); accuracy +0.0002, F1 +0.0001; same call for 99.95 % of pairs. 16,783 predictions identical to
