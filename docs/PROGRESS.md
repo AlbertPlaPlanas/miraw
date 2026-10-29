@@ -68,6 +68,19 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-29 (09:00): **Gate 3 started (branch `gate3`).** The paper archive has the paper's per-pair results on the full
+  unbalanced test set (`Results/Evaluate_14K_FULL`, all 10 configs, 17,043 pairs: 16,495 targets, 548 non-targets; miRAW NF and
+  7-2:10 NF were run by the authors in two parts each) but not the input file. Rebuilt it (`scripts/gate3.py build`) from those
+  pairs plus the sequences in the original repository's `TestData/Data/fullUnifiedFile.csv` (688 MB, 305,008 pairs, sha256
+  997e689f...; fetched with a sparse git clone, the Bitbucket raw endpoint fails on it): all 17,043 pairs found with the paper's
+  label; sequences identical to the balanced sets where they overlap. The full set's 548 negatives are the balanced sets'
+  negatives; only 564 of its positives are in the balanced sets. Paper AUCs on this set (from their outputs): miRAW NF 0.8228
+  (the gate's baseline), AE 0.7918, 7-1:10 NF 0.8133 / AE 0.7836, 7-2:10 NF 0.8185 / AE 0.7909, PITA NF 0.8038 / AE 0.7705,
+  TS NF 0.7914 / AE 0.7615. Running: `scripts/gate3.py run report --workers 14` (log `runs/gate3/gate3.log`, resumable;
+  chunks in `runs/gate3/<config>/`); estimated 5-6 h for miRAW NF (about 15,900 pairs not in the fold cache), ~3 h more for the rest.
+  Also fixed: `pymiraw data unpack-archive` never extracted the paper's 9 CV fold models (needed by Gate 2 / `verify_gates.py`);
+  they now unpack to `data/original/Results/ResultsCV/` (the archive's layout), with the full-set results.
+
 * 2026-10-29 (08:30): README section "Running on CPU or GPU". Prediction always runs on CPU cores (ViennaRNA is CPU-only;
   the network stays on the CPU in each worker); training follows `accelerator` (`auto` = GPU if PyTorch finds one). New
   `pymiraw train --accelerator`. Measured, CV fold 6 full training (14,000 sites, paper regime): GPU (T4) 14 s, CPU
