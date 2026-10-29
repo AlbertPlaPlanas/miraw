@@ -419,16 +419,16 @@ After any change that could affect results, run `make verify-gates`. The design,
 
 **Summary (2026-10-29):** the port is functionally complete and self-contained: the original weights ship with the package
 and are the default; retrained models pass Gate 2 but have not been promoted to default. Every gate was re-run from scratch
-after the API restructure (`scripts/verify_gates.py`) and gave the committed numbers exactly.
+after the API restructure (`scripts/verify_gates.py`) and gave the committed numbers exactly. All four gates pass.
 
 | Gate | Result |
 |---|---|
 | Gate 0: imported paper model vs the paper's cross-validation | passed (identical fold-6 test accuracy, 0.9351428571) |
 | Gate 1: pipeline with the original weights vs the published benchmark | passed (100/100 runs; every configuration within 0.005) |
 | Gate 2: retrained models vs the paper's models | passed; not promoted to default |
-| Gate 3: full unbalanced test set | not run yet |
+| Gate 3: the original weights on the paper's full unbalanced test set (17,043 pairs) | passed (AUC 0.8225 vs the paper's 0.8228, tolerance 0.005; identical with ViennaRNA 2.2.5) |
 
-**Remaining:** Gate 3 (running), testing the installation in a fresh environment (no ViennaRNA or PyTorch preinstalled;
+**Remaining:** testing the installation in a fresh environment (no ViennaRNA or PyTorch preinstalled;
 also macOS and Windows), a decision on promoting a retrained model, running the original `miRAW.jar` side by side (also
 needed to compare speed), the SpecificZones and ReservedZones filters (unused by the paper), profiling, publishing on
 PyPI (wheel, metadata and the PyPI page; until then install from GitHub) and the `v1.0.0` release.
