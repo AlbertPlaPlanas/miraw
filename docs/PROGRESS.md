@@ -68,6 +68,15 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-29 (23:30 UTC): **CI fix: ViennaRNA could not load on the GitHub runner** (`ImportError: Failed to load ViennaRNA
+  RNAlib Python wrapper`; 12 tests). Cause: the Bioconda `viennarna` 2.7.2 build links `libopenblas.so.0` but does not declare
+  it; with PyTorch the solver picks MKL BLAS, so the conda env has no OpenBLAS. The dev machine supplied it from the OS
+  (`libopenblas0-pthread`), the runner does not. Unnoticed until the weights were bundled, because the tests that run
+  ViennaRNA used to skip in CI. Fix: `libopenblas` added to `environment.yml`; `conda-lock.yml` updated with
+  `--update libopenblas` (adds libopenblas 0.3.34; 11 dev/AWS tools got patch bumps; numpy, PyTorch and ViennaRNA unchanged);
+  a CI step imports ViennaRNA's compiled module so a missing library is named. Checked: an env installed from the lock file
+  resolves `libopenblas.so.0` inside the env, and the fast tests pass (141 passed, 1 skipped).
+
 * 2026-10-29 (08:30): README section "Running on CPU or GPU". Prediction always runs on CPU cores (ViennaRNA is CPU-only;
   the network stays on the CPU in each worker); training follows `accelerator` (`auto` = GPU if PyTorch finds one). New
   `pymiraw train --accelerator`. Measured, CV fold 6 full training (14,000 sites, paper regime): GPU (T4) 14 s, CPU

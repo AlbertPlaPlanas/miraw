@@ -28,6 +28,9 @@ jobs:
       - name: install package
         shell: bash -el {0}
         run: pip install -e . --no-deps
+      - name: check ViennaRNA loads (imports the compiled module directly, so a missing library is named)
+        shell: bash -el {0}
+        run: python -c "from RNA import _RNA; import RNA; print('ViennaRNA', RNA.__version__)"
       - name: lint
         shell: bash -el {0}
         run: ruff check src tests scripts
