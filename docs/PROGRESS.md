@@ -82,6 +82,15 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-30: **Publish workflow, macOS and Windows smoke tests failed** (`RuntimeError: An attempt has been made to
+  start a new process before the current process has finished its bootstrapping phase`). Worker processes there are
+  spawned, and a spawned worker re-runs the main script; `scripts/smoke_installed.py` had its code at the top level, so
+  each worker tried to start workers of its own. Fixed: the script's code is under `if __name__ == "__main__":`; the
+  same guard added to `src/pymiraw/__main__.py` (`python -m pymiraw ... --workers N` had the same problem; the installed
+  `pymiraw` command did not, pip's launcher has the guard). The Linux smoke job also runs `--spawn` now, so the spawned
+  path is tested on every OS. Reproduced locally with spawned workers (old script fails, fixed one passes; `python -m
+  pymiraw evaluate --workers 2` passes). README: a note that scripts on macOS/Windows need the guard.
+
 * 2026-10-29 (23:55 UTC): **PyPI package ready (branch `pypi-package`).** `pyproject.toml`: version read from
   `src/pymiraw/__init__.py`, SPDX licence + licence file, author, project URLs, classifiers (Linux/macOS/Windows,
   Python 3.11-3.13; ViennaRNA 2.7.2 has wheels for 3.10-3.14 on all three), keywords, explicit sdist contents (package,
