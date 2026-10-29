@@ -3,14 +3,14 @@
 Read this first in a new session (see CLAUDE.md). Update it after every meaningful step.
 Plan and decisions: [PLAN.md](PLAN.md).
 
-## Status (2026-10-28)
+## Status (2026-10-29)
 
 | Phase | State |
 |---|---|
 | 0 Bootstrap (env, skeleton, S3, hooks, CI) | **done**, `conda-lock.yml` generated (linux-64); not done: Java reference env (`environment-reference.yml`) not created; only the original weights are mirrored to S3 (the 1 GB archive is not) |
 | 1 Primitives (folding, encoding, MLP, DL4J import) | **done**. Gate 0 passed |
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
-| 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all config means within 0.005; tolerance now 0.02) |
+| 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all config means within 0.005; tolerance now 0.02); **Gate 3 PASSED** (full unbalanced set, AUC 0.8225 vs 0.8228, tolerance 0.005) |
 | 4 Training stack | **done; Gate 2 PASSED** (rank-based bound, margins acc/F1 0.02, AUC 0.005; set post hoc, see Log 22:00); fragile rows: paired gene accuracy (slack 0.0005), site AUC (0.0009). Not promoted (owner decision needed) |
 | 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README, high-level API + bundled weights + tutorial notebook (branch `restructure-api`, all gates re-verified identical) done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, AE configs for seeds 1-2 of fold 6 |
 
@@ -24,6 +24,10 @@ Plan and decisions: [PLAN.md](PLAN.md).
   accuracy/F1 0.02, AUC 0.005; both changes post hoc, owner decisions). Lower bounds: site acc -0.0109, site AUC -0.0041 (fragile, slack
   0.0009); gene per cell acc -0.0013 / F1 -0.0035; gene paired per fold acc -0.0195 (**fragile, slack 0.0005**) / F1 -0.0044. Under the
   original margins (0.01) it fails on site acc and paired gene acc. Not promoted; the original weights stay the default.
+* **Gate 3 (full unbalanced test set, 17,043 pairs, original weights, ViennaRNA 2.7.2):** **PASSED** (rule: AUC >= the paper's
+  - 0.005, the same AUC tolerance as Gate 2, for consistency with the other gates). miRAW-6-1:10 NF AUC 0.8225 vs 0.8228
+  (-0.0003); all 10 configurations within -0.0003..+0.0013 AUC and 0.0055 accuracy/F1, same call for 99.4-99.95 % of pairs.
+  With ViennaRNA 2.2.5 the differing pairs equal the paper's and the AUC is the paper's exactly.
 * **Orientation experiment (`old-default` vs `natural`):** DECIDED: keep `old-default`. `natural` is significantly better at site
   level (paper regime: AUC +0.0015, acc +0.0057, p <= 0.002) but not at gene level (F1 -0.006 vs old-default, p = 0.76).
 
@@ -61,10 +65,28 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Next steps
 
-1. Read the Gate 1 comparison when `runs/parity/comparison.csv` exists; investigate site-count differences if any config is outside +-0.03.
-2. Read the CV results; if accuracy < 0.921, tune (epochs/patience/lr/batch) before concluding Gate 2; then decide the orientation experiment per PLAN.md decision 8.
-3. Generate `conda-lock.yml`; `environment-reference.yml` and the Java oracle comparison.
-4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
+1. Merge branch `gate3` (Gate 3 passed) into `main`.
+2. **Test the installation in a truly fresh environment**: a machine or container with no ViennaRNA, no PyTorch and none
+   of the other dependencies preinstalled. Run the README's install command as written
+   (`pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"`), then `pymiraw --help`, the README
+   quick start, `pytest` and the tutorial notebook. The 2026-10-28 check used a new venv but with CPU PyTorch installed
+   first; also check a default (CUDA) PyTorch install, macOS and Windows (ViennaRNA wheels), and Python 3.11-3.13.
+3. **Publish on PyPI** (the name `pymiraw` was free on 2026-10-29): build and publish the wheel and sdist, with a proper
+   PyPI page.
+   * Build: `python -m build` (sdist + wheel; the wheel is 1.8 MB with the bundled weights and examples), `twine check`;
+     check the sdist contents (no `data/`, `runs/`, secrets; decide on `notebooks/`, `docs/results/`, `tests/`).
+   * Metadata in `pyproject.toml`: authors, `[project.urls]` (repository, documentation, issues, paper DOI), classifiers
+     (Python 3.11-3.13, OS, license, Bioinformatics topic), keywords, `license-files`; the version (0.2.0 now) and how
+     it is bumped.
+   * PyPI page: the README is the long description, but PyPI does not render relative links and images (logo, figures),
+     `<picture>` dark-mode switching or Mermaid; use absolute URLs, or a dedicated PyPI README. Install instructions
+     become `pip install pymiraw`.
+   * Publishing: TestPyPI first; then a free GitHub Actions workflow with PyPI trusted publishing (no stored token),
+     triggered by a version tag.
+   * After publishing: test `pip install pymiraw` in a fresh environment (item 2).
+4. Owner decision on promoting a retrained model (Gate 2 passed; the original weights stay the default until then).
+5. Run the original `miRAW.jar` side by side (Java oracle, `environment-reference.yml`), also to compare speed.
+6. SpecificZones and ReservedZones filters (unused by the paper); profiling; the `v1.0.0` release.
 
 ## Log (newest first)
 
@@ -76,6 +98,61 @@ Plan and decisions: [PLAN.md](PLAN.md).
   `--update libopenblas` (adds libopenblas 0.3.34; 11 dev/AWS tools got patch bumps; numpy, PyTorch and ViennaRNA unchanged);
   a CI step imports ViennaRNA's compiled module so a missing library is named. Checked: an env installed from the lock file
   resolves `libopenblas.so.0` inside the env, and the fast tests pass (141 passed, 1 skipped).
+* 2026-10-29 (22:30 UTC): **Gate 3 PASSED; all 10 configurations done.** Gate 3 rule now has an AUC tolerance of 0.005 (owner
+  decision): the same AUC margin as Gate 2, so that Gate 3, like Gates 1 and 2, allows for ViennaRNA version differences
+  (`scripts/gate3.py` uses `MARGINS["AUC"]`). miRAW-6-1:10 NF: AUC 0.8225 vs the paper's 0.8228 (diff -0.0003) -> PASS. A small
+  test with the paper's ViennaRNA 2.2.5 (the 260 pairs that differ under 2.7.2) gave results identical to the paper's.
+  All configurations (AUC ours / paper / diff; accuracy and F1 diffs):
+
+  | Config | AUC ours | AUC paper | AUC diff | Acc diff | F1 diff | same call |
+  |---|---|---|---|---|---|---|
+  | 6-1:10 NF | 0.8225 | 0.8228 | -0.0003 | +0.0002 | +0.0001 | 99.95 % |
+  | 6-1:10 AE | 0.7928 | 0.7918 | +0.0010 | +0.0022 | +0.0014 | 99.75 % |
+  | 7-1:10 NF | 0.8135 | 0.8133 | +0.0002 | +0.0023 | +0.0013 | 99.72 % |
+  | 7-1:10 AE | 0.7840 | 0.7836 | +0.0004 | +0.0049 | +0.0035 | 99.39 % |
+  | 7-2:10 NF | 0.8191 | 0.8185 | +0.0007 | +0.0024 | +0.0014 | 99.72 % |
+  | 7-2:10 AE | 0.7922 | 0.7909 | +0.0013 | +0.0055 | +0.0038 | 99.37 % |
+  | PITA NF | 0.8043 | 0.8038 | +0.0005 | +0.0011 | +0.0008 | 99.87 % |
+  | PITA AE | 0.7711 | 0.7705 | +0.0006 | +0.0015 | +0.0015 | 99.82 % |
+  | TS NF | 0.7923 | 0.7914 | +0.0009 | +0.0009 | +0.0007 | 99.88 % |
+  | TS AE | 0.7621 | 0.7615 | +0.0006 | +0.0016 | +0.0018 | 99.81 % |
+
+  Run time: about 12 h (08:52-20:38 UTC) for the 10 configurations on 14 workers (miRAW NF 8.5 h, mostly cold folding; the rest reuse the
+  fold cache and saved sites).
+
+* 2026-10-29 (18:30 UTC): **Gate 3 explained: with ViennaRNA 2.2.5 pyMIRAW reproduces the paper exactly.** The 260 pairs whose
+  miRAW NF predictions differed under ViennaRNA 2.7.2 were re-run with ViennaRNA 2.2.5 (`--backend cli`, Bioconda 2.2.5, 1 h 25 min
+  on 4 workers): 260/260 same call, same site counts and same prediction (max |diff| 1.8e-6 = rounding of the paper's printed
+  values). Full-set AUC with those 260 from 2.2.5: 0.822805 = the paper's 0.822805. So the -0.0003 under 2.7.2 is entirely the
+  ViennaRNA energy-parameter change, as in Gate 1. Per-pair values: `docs/results/gate3_differing_pairs_vienna225.csv`.
+  Verdict under the rule as written: PASS with ViennaRNA 2.2.5 (exact), FAIL by 0.0003 with the default 2.7.2; the owner
+  decides how the rule treats the default backend.
+
+* 2026-10-29 (17:55 UTC): **Gate 3, default configuration: FAIL by 0.0003 under the rule as written (AUC >= the paper's).**
+  miRAW-6-1:10 NF on the full unbalanced set (17,043 pairs, original weights, ViennaRNA 2.7.2 bindings): AUC 0.8225 vs the
+  paper's 0.8228 (diff -0.0003); accuracy +0.0002, F1 +0.0001; same call for 99.95 % of pairs. 16,783 predictions identical to
+  the paper's (< 1e-6); 260 differ (246 targets, 14 non-targets), 8 of them change the call. With the paper's scores for just
+  those 14 non-targets the AUC would be 0.8233. Same pattern as Gate 1 (ViennaRNA 2.7.2 vs the paper's 2.2.5 energies).
+  Rule NOT changed (owner's call). Next: re-run the 260 differing pairs with ViennaRNA 2.2.5 (`--backend cli`) to test that
+  explanation. The other 9 configurations are still running (`runs/gate3/gate3.log`). `docs/results/gate3_comparison.csv` holds
+  the miRAW NF row so far.
+
+* 2026-10-29 (09:30): Gate 3 running. miRAW NF chunk 0 (1,000 pairs, all targets: the file lists the 548 non-targets
+  last) took 29 min, so miRAW NF needs ~8.5 h (verdict ~17:30); same target/non-target call as the paper for 99.9 % of
+  those pairs. The AUC needs the final chunk (the non-targets).
+
+* 2026-10-29 (09:00): **Gate 3 started (branch `gate3`).** The paper archive has the paper's per-pair results on the full
+  unbalanced test set (`Results/Evaluate_14K_FULL`, all 10 configs, 17,043 pairs: 16,495 targets, 548 non-targets; miRAW NF and
+  7-2:10 NF were run by the authors in two parts each) but not the input file. Rebuilt it (`scripts/gate3.py build`) from those
+  pairs plus the sequences in the original repository's `TestData/Data/fullUnifiedFile.csv` (688 MB, 305,008 pairs, sha256
+  997e689f...; fetched with a sparse git clone, the Bitbucket raw endpoint fails on it): all 17,043 pairs found with the paper's
+  label; sequences identical to the balanced sets where they overlap. The full set's 548 negatives are the balanced sets'
+  negatives; only 564 of its positives are in the balanced sets. Paper AUCs on this set (from their outputs): miRAW NF 0.8228
+  (the gate's baseline), AE 0.7918, 7-1:10 NF 0.8133 / AE 0.7836, 7-2:10 NF 0.8185 / AE 0.7909, PITA NF 0.8038 / AE 0.7705,
+  TS NF 0.7914 / AE 0.7615. Running: `scripts/gate3.py run report --workers 14` (log `runs/gate3/gate3.log`, resumable;
+  chunks in `runs/gate3/<config>/`); estimated 5-6 h for miRAW NF (about 15,900 pairs not in the fold cache), ~3 h more for the rest.
+  Also fixed: `pymiraw data unpack-archive` never extracted the paper's 9 CV fold models (needed by Gate 2 / `verify_gates.py`);
+  they now unpack to `data/original/Results/ResultsCV/` (the archive's layout), with the full-set results.
 
 * 2026-10-29 (08:30): README section "Running on CPU or GPU". Prediction always runs on CPU cores (ViennaRNA is CPU-only;
   the network stays on the CPU in each worker); training follows `accelerator` (`auto` = GPU if PyTorch finds one). New

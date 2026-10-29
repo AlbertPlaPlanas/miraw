@@ -100,7 +100,10 @@ def test_unpack_archive_flattens_and_filters(tmp_path):
     from pymiraw import storage
 
     src = tmp_path / "src"
-    for rel in ("NetworkModel/bestModel.bin", "Data/TestData/balanced10/a.csv", "Data/Other/skip.csv"):
+    cv, full = "Results/ResultsCV/VeryDeepXENT14K_e10/Set3", "Results/Evaluate_14K_FULL/ts_NF"
+    keep = (f"{cv}/bestModel.bin", f"{full}/targetPredictionOutput.csv")
+    drop = (f"{cv}/lastModel.bin", f"{full}/allTargetSites.csv")
+    for rel in ("NetworkModel/bestModel.bin", "Data/TestData/balanced10/a.csv", "Data/Other/skip.csv", *keep, *drop):
         (src / "PLOSComb" / rel).parent.mkdir(parents=True, exist_ok=True)
         (src / "PLOSComb" / rel).write_text("1")
     with py7zr.SevenZipFile(tmp_path / "a.7z", "w") as z:
@@ -109,6 +112,7 @@ def test_unpack_archive_flattens_and_filters(tmp_path):
     assert (out / "NetworkModel" / "bestModel.bin").is_file()
     assert (out / "Data" / "TestData" / "balanced10" / "a.csv").is_file()
     assert not (out / "Data" / "Other").exists()
+    assert all((out / k).is_file() for k in keep) and not any((out / d).exists() for d in drop)
 
 
 def test_vienna_bin_reaches_the_pipeline_config(monkeypatch, tmp_path):

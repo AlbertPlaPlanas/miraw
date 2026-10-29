@@ -436,8 +436,16 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
     passes with slack below 0.001 are flagged as fragile. The margins were chosen after seeing the data.
   * Passing does **not** promote a model automatically: the original weights (`--original-weights`,
     `model: original`) remain the default unless the owner decides otherwise, so pyMIRAW is never worse than miRAW.
-* **Gate 3: full unbalanced test set** (`Evaluate_14K_FULL`): AUC ≥ the paper's (> 0.75) for the
-  default model.
+* **Gate 3: full unbalanced test set** (`Evaluate_14K_FULL`, 17,043 pairs): for the default model and configuration
+  (miRAW-6-1:10, no filter), AUC ≥ the paper's AUC on the same pairs **minus 0.005**. The tolerance (2026-10-29, owner
+  decision) makes Gate 3 consistent with the other gates, which allow for the ViennaRNA version: Gate 1's ±0.02 and the
+  same AUC margin as Gate 2 (`MARGINS["AUC"]`). The other 9 configurations are compared with the paper as well.
+  * Result 2026-10-29 (`scripts/gate3.py`; the input file is rebuilt from the paper's results and the original repository's
+    `fullUnifiedFile.csv`): **passed**. miRAW-6-1:10 NF AUC 0.8225 with ViennaRNA 2.7.2 vs the paper's 0.8228 (-0.0003);
+    all 10 configurations within -0.0003..+0.0013 AUC and 0.0055 accuracy/F1 of the paper, same call for 99.4-99.95 % of
+    pairs (`docs/results/gate3_comparison.csv`). A test with the paper's ViennaRNA 2.2.5 on the 260 pairs whose predictions
+    differ under 2.7.2 gave results identical to the paper's, and the paper's AUC exactly (0.822805)
+    (`docs/results/gate3_differing_pairs_vienna225.csv`).
 
 ---
 

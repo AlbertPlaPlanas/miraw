@@ -22,6 +22,10 @@ UNPACK_PATTERNS = (
     "PLOSComb/Data/CrossVal/RelaxedPW60_14K_35K/binary/",
     "PLOSComb/Results/GlobalSummary.xls",
 )
+UNPACK_SUFFIXES = (  # (prefix, suffix): only some files of these folders
+    ("PLOSComb/Results/ResultsCV/VeryDeepXENT14K_e10/", "/bestModel.bin"),  # the paper's 9 CV fold models (Gate 2)
+    ("PLOSComb/Results/Evaluate_14K_FULL/", "/targetPredictionOutput.csv"),  # paper results, full test set (Gate 3)
+)
 
 
 def cache_dir() -> Path:
@@ -93,7 +97,12 @@ def unpack_archive(archive: str | Path, dest: str | Path = ORIGINAL_DIR) -> Path
     import py7zr
 
     with py7zr.SevenZipFile(archive) as z:
-        targets = [i.filename for i in z.list() if i.filename.startswith(UNPACK_PATTERNS)]
+        targets = [
+            i.filename
+            for i in z.list()
+            if i.filename.startswith(UNPACK_PATTERNS)
+            or any(i.filename.startswith(a) and i.filename.endswith(b) for a, b in UNPACK_SUFFIXES)
+        ]
     if not targets:
         raise ValueError(f"{archive} does not look like PLOSComb.7z")
     dest = Path(dest)

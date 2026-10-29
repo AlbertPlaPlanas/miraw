@@ -8,7 +8,7 @@ data is only needed for the benchmarks and full-size training, and is never stor
 | Original miRAW weights | bundled: `src/pymiraw/resources/miraw_original.pt` (1.75 MB, a bit-exact conversion of `PLOSComb.7z` `NetworkModel/bestModel.bin`) | `model="original"` / `--original-weights` (the default) |
 | Example pairs and training sites | bundled: `example_pairs.tsv` (24 pairs from balanced test set 0), `example_sites.tsv.gz` (5,000 sites from CV fold 6), built by `scripts/make_example_data.py` | `pymiraw.example_pairs()`, `pymiraw.example_sites()`, tutorial, tests |
 | Published results | bundled: `paper_global_summary.csv` (from `Results/GlobalSummary.xls`), `paper_cv_xent_models_rescored.csv` | Gate 1 and Gate 2 comparisons |
-| Paper test sets, CV folds, the paper's fold models | `PLOSComb.7z` (`Data/TestData/balanced10`, `Data/CrossVal/RelaxedPW60_14K_35K/binary`, `ResultsCV/`) | `pymiraw parity`, `pymiraw train`, `scripts/verify_gates.py` |
+| Paper test sets, CV folds, the paper's fold models | `PLOSComb.7z` (`Data/TestData/balanced10`, `Data/CrossVal/RelaxedPW60_14K_35K/binary`, `Results/ResultsCV/`) | `pymiraw parity`, `pymiraw train`, `scripts/verify_gates.py` |
 
 ## Getting the data
 
