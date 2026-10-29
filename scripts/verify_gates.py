@@ -1,23 +1,25 @@
 """Re-run the acceptance gates from scratch and compare every number with the committed results (docs/results/).
 
-Run this after any change that could touch results (refactors, dependency updates). Steps (default: all):
+Run this after any change that could touch results (refactors, dependency updates). Steps (default: all, in this order):
 
   gate0  bundled original model on CV fold 6 = the paper's 0.9351428571; the 9 paper fold models re-scored =
          pymiraw/resources/paper_cv_xent_models_rescored.csv.
   gate1  `pymiraw parity` with the original weights, 10 sets x 10 configs, into a fresh sites folder (site
          finders and accessibility filter recomputed; ViennaRNA window folds come from the fold cache):
          per-run TP/FP/TN/FN must equal docs/results/gate1_all_sets.csv, and the gate must pass.
-  gene   the gene-level Gate 2 runs with the committed model files (retrained fold models and the paper's
-         fold models), same sets/configs as the committed results: TP/FP/TN/FN must be identical.
   site   retrain the paper regime (folds 0-8 x seeds 0-2, both orientations) and compare with
          docs/results/cv_paper_regime.csv. Training on a different torch build or device need not be
-         bit-identical; differences are reported, then `gene-new` re-runs the gene level with the new models.
-  gene-new  the gene-level runs with the models retrained by `site` (only needed if they differ).
+         bit-identical; differences are reported (not a failure: Gate 2 decides).
+  gene   the gene-level Gate 2 runs of the fold models (retrained ones and the paper's), same sets/configs as the
+         committed results. Uses the models in runs/train_paperRegime_* when present (the dev machine), else the
+         ones `site` retrained. TP/FP/TN/FN must be identical to the committed results, unless the models are
+         new ones that differ from the committed models (then only the Gate 2 report below judges them).
+  gene-new  (committed models present) the gene-level runs again with the models `site` retrained, if they differ.
   report Gate 2 report (scripts/gate2_report.py) on the re-run results.
 
 Usage: python scripts/verify_gates.py [steps...] [--out runs/verify] [--workers 15]
-Needs data/original (pymiraw data unpack-archive PLOSComb.7z) and the committed models in runs/train_paperRegime_*.
-Exit code 0 only if every comparison and gate passes.
+Needs data/original (pymiraw data unpack-archive PLOSComb.7z). On a fresh clone the default steps take about
+4-5 hours on 16 cores and a GPU. Exit code 0 only if every comparison and gate passes.
 """
 
 from __future__ import annotations
@@ -173,7 +175,7 @@ def report(results: Path) -> None:
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("steps", nargs="*", default=["gate0", "gate1", "gene", "site", "gene-new", "report"])
+    p.add_argument("steps", nargs="*", default=["gate0", "gate1", "site", "gene", "gene-new", "report"])
     p.add_argument("--out", type=Path, default=ROOT / "runs/verify")
     p.add_argument("--workers", type=int, default=15)
     args = p.parse_args()
@@ -185,11 +187,23 @@ def main() -> int:
         elif step == "gate1":
             gate1(args)
         elif step == "gene":
-            print("Gene level, committed models")
-            gene(args, committed_models, args.out / "results")
+            retrained = args.out / "train_old-default"
+            if committed_models.is_dir():
+                print("Gene level, committed models")
+                gene(args, committed_models, args.out / "results")
+            elif not retrained.is_dir():
+                p.error("no fold models: run the `site` step first (it retrains them)")
+            elif retrained_identical(args.out / "results_retrained"):
+                print("Gene level, retrained models (identical to the committed ones)")
+                gene(args, retrained, args.out / "results")
+            else:
+                print("Gene level, retrained models (new: judged by the Gate 2 report)")
+                gene(args, retrained, args.out / "results_retrained", prefix="retrained")
         elif step == "site":
             site(args, args.out / "results_retrained")
         elif step == "gene-new":
+            if not committed_models.is_dir():
+                continue  # `gene` already used the retrained models
             if retrained_identical(args.out / "results_retrained"):
                 print("Gene level with retrained models: skipped (retraining reproduced the committed models' counts)")
                 continue

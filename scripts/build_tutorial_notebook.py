@@ -28,7 +28,8 @@ gene is a target. **The original miRAW weights come with the package**, so there
 
 The notebook has three parts:
 
-1. **[Quick start](#1.-Quick-start)**: predictions in a few lines, no programming experience needed.
+1. **[Quick start](#1.-Quick-start)**: predictions in a few lines from a file, a pandas table or two sequences; no
+   programming experience needed.
 2. **[Configuration](#2.-Configuration)**: site finders, filters, ViennaRNA versions, saving work between runs, the command line.
 3. **[Training and custom models](#3.-Training-and-custom-models)**: train in the paper's regime, save and reuse your own
    weights, change the training settings, plug in a new architecture.
@@ -137,10 +138,46 @@ sorted(p.name for p in folder.iterdir())
 
 md("""
 `targetPredictionOutput.csv` (one line per pair) and `targetSites.csv` (one line per site) are the same files the
-original miRAW wrote; they open in Excel. A table you already have in Python works too: any DataFrame with the columns
-above, or with just `mirna_seq` and `utr`.
+original miRAW wrote; they open in Excel.
 
-### 1.4 A single miRNA and 3'UTR
+### 1.4 Predict from a pandas table
+
+If your pairs are already in Python, put them in a pandas DataFrame and pass it to `predict` directly, no file needed.
+Only two columns are required: **`mirna_seq`** (the mature miRNA) and **`utr`** (the 3'UTR). `miRNA`, `gene_name`,
+`EnsemblId` and `label` (1/0) are optional; a DataFrame with the unified-file columns above works as well.
+
+This example has three pairs: let-7a against a 3'UTR fragment that contains a perfect let-7 site, miR-21 against the
+same fragment, and let-7a against a 3'UTR without a let-7 site.
+""")
+
+code("""
+import pandas as pd
+
+let7a = "UGAGGUAGUAGGUUGUAUAGUU"  # hsa-let-7a-5p
+mir21 = "UAGCUUAUCAGACUGAUGUUGA"  # hsa-miR-21-5p
+utr_a = "UAGCUGAGCGGCGAACCACUAGAAAAGGUUAACUAUACAACCUACUACCUCACAGACCCCGGAGCCCAGCCGUCACGAUUGU"  # has a let-7 site
+utr_b = "GCGCGAUUACGCGGCAUAUCGCGCCGAUUAGCGCGAUCGAUCGGCGCUAUCGAUCGCGGCAUAGCUAGCGC"  # no let-7 site
+
+my_pairs = pd.DataFrame({
+    "miRNA": ["hsa-let-7a-5p", "hsa-miR-21-5p", "hsa-let-7a-5p"],
+    "gene_name": ["geneA", "geneA", "geneB"],
+    "mirna_seq": [let7a, mir21, let7a],
+    "utr": [utr_a, utr_a, utr_b],
+})
+my_pairs
+""")
+
+code("""
+table_predictions = pymiraw.predict(my_pairs)
+table_predictions.genes[["miRNA", "GeneName", "Prediction", "IsTarget", "PosSites", "NegSites"]]
+""")
+
+md("""
+Only let-7a on geneA is called a target: its site pairs perfectly with the let-7 seed. miR-21 does not bind that
+fragment, and geneB's 3'UTR has candidate sites, but they all score below zero. A plain list of `(mirna_seq, utr)`
+tuples works too: `pymiraw.predict([(let7a, utr_a), (mir21, utr_a)])`.
+
+### 1.5 A single miRNA and 3'UTR
 
 For one pair, paste the two sequences:
 """)
