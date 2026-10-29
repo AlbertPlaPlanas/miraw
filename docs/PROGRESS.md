@@ -68,6 +68,10 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-29 (09:30): Gate 3 running. miRAW NF chunk 0 (1,000 pairs, all targets: the file lists the 548 non-targets
+  last) took 29 min, so miRAW NF needs ~8.5 h (verdict ~17:30); same target/non-target call as the paper for 99.9 % of
+  those pairs. The AUC needs the final chunk (the non-targets).
+
 * 2026-10-29 (09:00): **Gate 3 started (branch `gate3`).** The paper archive has the paper's per-pair results on the full
   unbalanced test set (`Results/Evaluate_14K_FULL`, all 10 configs, 17,043 pairs: 16,495 targets, 548 non-targets; miRAW NF and
   7-2:10 NF were run by the authors in two parts each) but not the input file. Rebuilt it (`scripts/gate3.py build`) from those
