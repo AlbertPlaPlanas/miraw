@@ -241,13 +241,15 @@ def train(
     max_epochs: int = typer.Option(10),
     patience: int = typer.Option(0),
     shuffle: bool = typer.Option(
-        True, "--shuffle/--no-shuffle", help="--no-shuffle = file order every epoch (paper regime)."
+        False, "--shuffle/--no-shuffle", help="Default --no-shuffle: file order every epoch (paper regime)."
     ),
     val_fraction: float = typer.Option(
-        0.1, help="0 = train on all data, keep the lowest-training-loss epoch (paper regime)."
+        0.0, help="Default 0: train on all data, keep the lowest-training-loss epoch (paper regime)."
     ),
 ):
-    """Cross-validate a model on the released folds and compare with the paper (Gate 2, site level)."""
+    """Cross-validate a model on the released folds and compare with the paper (Gate 2, site level).
+
+    The defaults are the paper's training regime (the same as `pymiraw.train` and `TrainConfig.paper()`)."""
     from pymiraw.config import TrainConfig
     from pymiraw.training.cv import compare_with_paper, run_cv
 

@@ -73,6 +73,6 @@ differently, so **rerun the orientation comparison** (`pymiraw train --orientati
 
 A model is only a candidate to replace the original weights if it passes Gate 2
 (`docs/PLAN.md`, section 6): one-sided 99 % non-inferiority to the paper's models at site level and at
-gene level, with margins 0.02 (accuracy, F1) and 0.005 (AUC). Train in the paper regime
-(`--no-shuffle --val-fraction 0`, i.e. `TrainConfig.paper()`) first for a like-for-like comparison, and use `make gate2`.
+gene level, with margins 0.02 (accuracy, F1) and 0.005 (AUC). Train in the paper regime first (`TrainConfig.paper()`,
+the default of `pymiraw.train` and `pymiraw train`) for a like-for-like comparison, and use `make gate2`.
 Run `pymiraw predict --model your_model.pt` to use it; the default stays `--original-weights`.

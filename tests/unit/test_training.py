@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from pymiraw.config import TrainConfig
 from pymiraw.training.data import loader, reorient, split_validation
 from pymiraw.training.trainer import CollapsedModelError, check_not_collapsed
 
@@ -36,10 +37,12 @@ def test_cli_passes_shuffle_to_the_trainer(monkeypatch, tmp_path):
 
     monkeypatch.setattr(cv, "run_cv", fake_run_cv)
     monkeypatch.setattr(cv, "compare_with_paper", lambda df: {})
-    args = ["train", str(tmp_path), "--output-dir", str(tmp_path / "o"), "--val-fraction", "0"]
-    assert CliRunner().invoke(cli.app, [*args, "--no-shuffle"]).exit_code == 0
+    args = ["train", str(tmp_path), "--output-dir", str(tmp_path / "o")]
+    assert CliRunner().invoke(cli.app, args).exit_code == 0  # defaults: the paper regime
     assert seen["cfg"].shuffle is False and seen["cfg"].val_fraction == 0
-    assert CliRunner().invoke(cli.app, args).exit_code == 0 and seen["cfg"].shuffle is True
+    assert seen["cfg"] == TrainConfig.paper(seed=seen["cfg"].seed)
+    assert CliRunner().invoke(cli.app, [*args, "--shuffle", "--val-fraction", "0.1"]).exit_code == 0
+    assert seen["cfg"].shuffle is True and seen["cfg"].val_fraction == 0.1
 
 
 def test_validation_split_is_stratified_deterministic_and_keeps_order():

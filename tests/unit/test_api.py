@@ -35,6 +35,14 @@ def test_public_names_resolve():
         pymiraw.no_such_name  # noqa: B018
 
 
+def test_submodules_and_load_config_work_in_a_fresh_interpreter():
+    import subprocess
+    import sys
+
+    code = "import pymiraw; pymiraw.config.load_config; pymiraw.load_config; pymiraw.storage.original_weights_path()"
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
 def test_bundled_examples():
     pairs, sites = pymiraw.example_pairs(), pymiraw.example_sites()
     assert len(pairs) == 24 and pairs.Positive_Negative.value_counts().to_dict() == {"1": 12, "0": 12}

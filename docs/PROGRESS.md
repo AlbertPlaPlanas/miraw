@@ -68,6 +68,18 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-29 (08:00): **README revised twice for the new API; tutorial predicts from a pandas DataFrame.**
+  * README section 2 reorganised (install -> quick start -> notebook -> input -> output -> options -> ViennaRNA -> training ->
+    reproducing the paper -> developers); every Python block and CLI example was run in a fresh folder (outputs match the
+    comments), all 19 internal links and 15 file links resolve.
+  * Fixes found by the revision: `pymiraw train` now defaults to the paper regime (`--no-shuffle`, `--val-fraction 0`), as
+    `pymiraw.train` already did; `pymiraw.load_config` exported and `pymiraw.<submodule>` (e.g. `pymiraw.config`) works in a
+    fresh interpreter; `scripts/verify_gates.py` works on a fresh clone (retrains first, then uses the retrained models when
+    the committed `runs/train_paperRegime_*` are absent); `docs/data.md` (label is the first column of the CV files; bundled
+    data and its licence; output names) and `docs/extending.md` updated. 141 tests pass.
+  * Notebook section 1.4: a three-pair DataFrame (let-7a vs a 3'UTR with a let-7 site: 0.9996 target; miR-21 vs the same
+    3'UTR: -0.98; let-7a vs a 3'UTR without a site: -0.89).
+
 * 2026-10-29 (02:30): **Branch `restructure-api` verified: every gate re-run from scratch on the refactored code gives the
   committed numbers exactly.** `scripts/verify_gates.py` (all steps, `runs/verify/`, ~4 h on this machine): Gate 0 identical;
   Gate 1 from an empty sites folder 100/100 runs with identical TP/FP/TN/FN, PASS (largest config diff 0.0049); Gate 2 gene

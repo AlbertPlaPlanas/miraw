@@ -27,6 +27,7 @@ _EXPORTS = {
     "encode_sites": "pymiraw.api",
     # configuration and result types
     "PredictConfig": "pymiraw.config",
+    "load_config": "pymiraw.config",
     "TrainConfig": "pymiraw.config",
     "Model": "pymiraw.models.artifact",
     "Predictions": "pymiraw.prediction.pipeline",
@@ -44,9 +45,15 @@ __all__ = sorted(_EXPORTS)
 def __getattr__(name: str):
     if name in _EXPORTS:
         value = getattr(import_module(_EXPORTS[name]), name)
-        globals()[name] = value
-        return value
-    raise AttributeError(f"module 'pymiraw' has no attribute {name!r}")
+    else:  # a submodule, e.g. pymiraw.config or pymiraw.storage
+        try:
+            value = import_module(f"pymiraw.{name}")
+        except ModuleNotFoundError as e:
+            if e.name != f"pymiraw.{name}":
+                raise
+            raise AttributeError(f"module 'pymiraw' has no attribute {name!r}") from None
+    globals()[name] = value
+    return value
 
 
 def __dir__():

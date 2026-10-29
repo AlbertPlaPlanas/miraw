@@ -30,6 +30,6 @@ gate2:          ## Gate 2 non-inferiority report from the committed results
 parity:         ## Gate 1: reproduce the paper's benchmark with the original weights (hours)
 	pymiraw parity $(TEST_SETS) --output-dir runs/parity --cache-dir $$HOME/.cache/pymiraw/foldcache
 train-cv:       ## site-level cross-validation on the released folds, both orientations (paper regime)
-	for o in old-default natural; do pymiraw train $(CV_FOLDS) --orientation $$o --seeds 3 --no-shuffle --val-fraction 0 --output-dir runs/train_$$o; done
+	for o in old-default natural; do pymiraw train $(CV_FOLDS) --orientation $$o --seeds 3 --output-dir runs/train_$$o; done
 verify-gates:   ## re-run Gates 0-2 from scratch and diff every number with docs/results/ (hours)
 	python scripts/verify_gates.py
