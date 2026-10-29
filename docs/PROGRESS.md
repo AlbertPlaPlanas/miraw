@@ -12,7 +12,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all config means within 0.005; tolerance now 0.02) |
 | 4 Training stack | **done; Gate 2 PASSED** (rank-based bound, margins acc/F1 0.02, AUC 0.005; set post hoc, see Log 22:00); fragile rows: paired gene accuracy (slack 0.0005), site AUC (0.0009). Not promoted (owner decision needed) |
-| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, AE configs for seeds 1-2 of fold 6 |
+| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README, high-level API + bundled weights + tutorial notebook (branch `restructure-api`, all gates re-verified identical) done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, AE configs for seeds 1-2 of fold 6 |
 
 ## Gate results so far
 
@@ -68,7 +68,14 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
-* 2026-10-28 (23:30): **Branch `restructure-api`: developer-friendly API, self-contained package (in progress).**
+* 2026-10-29 (02:30): **Branch `restructure-api` verified: every gate re-run from scratch on the refactored code gives the
+  committed numbers exactly.** `scripts/verify_gates.py` (all steps, `runs/verify/`, ~4 h on this machine): Gate 0 identical;
+  Gate 1 from an empty sites folder 100/100 runs with identical TP/FP/TN/FN, PASS (largest config diff 0.0049); Gate 2 gene
+  level, all 19 model runs (committed retrained models + paper fold models): 1030 + 900 runs, 0 count differences; site level:
+  retraining reproduces all 54 runs (27 old-default weights bit-identical); Gate 2 report byte-identical to the committed one,
+  OVERALL PASS. Tutorial notebook executed with outputs (172 s on 16 cores; `scripts/build_tutorial_notebook.py`,
+  `scripts/run_notebook.py`). README logo (`docs/logo.png`, 960x540).
+* 2026-10-28 (23:30): **Branch `restructure-api`: developer-friendly API, self-contained package.**
   * Original weights bundled as `src/pymiraw/resources/miraw_original.pt` (1.75 MB, bit-exact conversion of `NetworkModel/bestModel.bin`
     by `scripts/bundle_original_weights.py`, sha256 pinned in `pymiraw.resources`); `original_weights_path()` = `$PYMIRAW_ORIGINAL_WEIGHTS`
     or the bundled file, no S3. Paper reference tables moved from `tests/fixtures/` to `pymiraw/resources/`; example data bundled
@@ -90,8 +97,6 @@ Plan and decisions: [PLAN.md](PLAN.md).
     spawned worker imports only pyMIRAW, so even a class in an importable module failed before); a class that exists only in
     a notebook/`__main__` is predicted in-process with a warning when workers are not forked. Tests: real spawn run, fallback.
     140 tests pass.
-  * Running: `scripts/verify_gates.py gate1 gene report` (Gate 1 from a fresh sites folder, then all 19 gene-level model runs, diffed
-    against `docs/results/`) and `scripts/verify_gates.py site` (retraining, paper regime); logs `runs/verify/{pipeline,site}.log`.
   * Tutorial notebook `notebooks/pymiraw_tutorial.ipynb` (quick start, configuration, training/custom weights/architectures).
 
 * 2026-10-28 (23:00): README figures and citation. New: a pipeline flow diagram (Mermaid), two charts (light/dark SVGs in

@@ -57,3 +57,4 @@ select = ["E", "F", "I", "UP", "B"]
 "scripts/*_report.py" = ["E501"]
 "scripts/gene_level_compare.py" = ["E501"]
 "scripts/viennarna_version_check.py" = ["E501"]
+"scripts/build_tutorial_notebook.py" = ["E501"]  # notebook prose

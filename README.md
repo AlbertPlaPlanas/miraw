@@ -307,8 +307,9 @@ with the committed results in `docs/results/`.
 
 ## 3. Status
 
-**Summary (2026-10-28):** the port is functionally complete. The original weights are the default; retrained models pass
-Gate 2 but have not been promoted to default.
+**Summary (2026-10-29):** the port is functionally complete and self-contained: the original weights ship with the package
+and are the default; retrained models pass Gate 2 but have not been promoted to default. Every gate was re-run from scratch
+after the API restructure (`scripts/verify_gates.py`) and gave the committed numbers exactly.
 
 | Gate | Result |
 |---|---|
