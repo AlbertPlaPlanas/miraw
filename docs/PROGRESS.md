@@ -68,6 +68,12 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Log (newest first)
 
+* 2026-10-29 (08:30): README section "Running on CPU or GPU". Prediction always runs on CPU cores (ViennaRNA is CPU-only;
+  the network stays on the CPU in each worker); training follows `accelerator` (`auto` = GPU if PyTorch finds one). New
+  `pymiraw train --accelerator`. Measured, CV fold 6 full training (14,000 sites, paper regime): GPU (T4) 14 s, CPU
+  (8 threads) 21 s; test accuracy 0.9231 (GPU, = the committed results) vs 0.9286 (CPU), AUC 0.978 both.
+  `CUDA_VISIBLE_DEVICES=""` with `auto` gives the CPU result exactly. `make train-cv` time corrected to 20-30 min.
+
 * 2026-10-29 (08:00): **README revised twice for the new API; tutorial predicts from a pandas DataFrame.**
   * README section 2 reorganised (install -> quick start -> notebook -> input -> output -> options -> ViennaRNA -> training ->
     reproducing the paper -> developers); every Python block and CLI example was run in a fresh folder (outputs match the

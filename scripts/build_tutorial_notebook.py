@@ -442,7 +442,7 @@ The paper archive (`PLOSComb.7z`, 1 GB, from [bitbucket.org/bipous/miraw_data](h
 holds the 10 cross-validation folds and the 10 balanced test sets. Unpack it once with
 `pymiraw data unpack-archive PLOSComb.7z` (it needs `pip install "pymiraw[data]"`). Then:
 
-* `pymiraw.cross_validate(folds_dir)` trains one model per fold in the paper's regime (about a minute per fold on a GPU);
+* `pymiraw.cross_validate(folds_dir)` trains one model per fold in the paper's regime (15-20 s per fold, GPU or CPU);
 * `pymiraw parity <balanced10 folder>` reruns the paper's 10 x 10 benchmark (Gate 1 in the README).
 
 The next cell runs only when the data is there.

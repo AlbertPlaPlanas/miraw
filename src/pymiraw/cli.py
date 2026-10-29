@@ -246,6 +246,7 @@ def train(
     val_fraction: float = typer.Option(
         0.0, help="Default 0: train on all data, keep the lowest-training-loss epoch (paper regime)."
     ),
+    accelerator: str = typer.Option("auto", help="auto (a GPU if there is one, else CPU) | cpu | gpu | mps."),
 ):
     """Cross-validate a model on the released folds and compare with the paper (Gate 2, site level).
 
@@ -261,6 +262,7 @@ def train(
         patience=patience,
         val_fraction=val_fraction,
         shuffle=shuffle,
+        accelerator=accelerator,
     )
     df = run_cv(folds_dir, cfg, range(int(lo), int(hi or lo) + 1), range(seeds), output_dir)
     Path(output_dir).mkdir(parents=True, exist_ok=True)

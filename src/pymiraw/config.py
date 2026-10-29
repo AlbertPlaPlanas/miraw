@@ -85,7 +85,7 @@ class TrainConfig:
     shuffle: bool = True  # False = file order every epoch, as the original (DL4J) trained
     site_orientation: str = "old-default"
     seed: int = 0
-    accelerator: str = "auto"
+    accelerator: str = "auto"  # Lightning: "auto" (a CUDA or Apple GPU if present, else CPU), "cpu", "gpu", "mps"
 
     @classmethod
     def paper(cls, **overrides) -> TrainConfig:

@@ -43,6 +43,9 @@ def test_cli_passes_shuffle_to_the_trainer(monkeypatch, tmp_path):
     assert seen["cfg"] == TrainConfig.paper(seed=seen["cfg"].seed)
     assert CliRunner().invoke(cli.app, [*args, "--shuffle", "--val-fraction", "0.1"]).exit_code == 0
     assert seen["cfg"].shuffle is True and seen["cfg"].val_fraction == 0.1
+    assert seen["cfg"].accelerator == "auto"
+    assert CliRunner().invoke(cli.app, [*args, "--accelerator", "cpu"]).exit_code == 0
+    assert seen["cfg"].accelerator == "cpu"
 
 
 def test_validation_split_is_stratified_deterministic_and_keeps_order():

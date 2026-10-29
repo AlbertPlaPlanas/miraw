@@ -38,6 +38,7 @@ results, ships with the original weights and runs from Python or the command lin
    * [Site finders, filters and speed](#site-finders-filters-and-speed)
    * [Choosing the ViennaRNA version](#choosing-the-viennarna-version)
    * [Training and your own weights](#training-and-your-own-weights)
+   * [Running on CPU or GPU](#running-on-cpu-or-gpu)
    * [Reproducing the paper's results](#reproducing-the-papers-results)
    * [For developers](#for-developers)
 3. [Status](#3-status)
@@ -139,9 +140,8 @@ pymiraw --help                                  # check: lists the commands
 ```
 
 This needs Python 3.11 or later and installs everything needed to predict and to train: PyTorch, ViennaRNA 2.7 and the
-original miRAW weights. Nothing else is downloaded later. A GPU is used for training when there is one; it is not needed.
-On a machine without a GPU, `pip install torch --index-url https://download.pytorch.org/whl/cpu` first gives a much
-smaller download.
+original miRAW weights. Nothing else is downloaded later. No GPU is needed; see
+[Running on CPU or GPU](#running-on-cpu-or-gpu) for a smaller CPU-only install and for training on a GPU.
 Optional extras: `pip install "pymiraw[notebook] @ git+..."` (JupyterLab and matplotlib, for the tutorial) and
 `pymiraw[data]` (tools to unpack the paper's data archive, for [reproducing the paper](#reproducing-the-papers-results)).
 
@@ -316,6 +316,39 @@ Only the defaults reproduce the paper's models; the gates test those. New archit
 register under a name and train through the same code: see [docs/extending.md](docs/extending.md) and section 3.5 of
 the notebook. `pymiraw.load_model` also opens DL4J `.bin` files, and `pymiraw model import-dl4j a.bin b.pt` converts them.
 
+### Running on CPU or GPU
+
+**Predicting always runs on the CPU cores**, on any machine. Almost all the time goes to RNA folding (ViennaRNA), which
+runs only on CPUs, and the network is small, so each worker process keeps it on the CPU. More cores make it faster
+(`workers=`, default one per core); a GPU does not, and nothing needs to be set on a GPU machine.
+
+**Training uses a GPU when PyTorch finds one**, and the CPU otherwise. Choose explicitly with `accelerator`:
+
+```python
+model = pymiraw.train(train_sites, test_sites, accelerator="cpu")   # "auto" (default), "cpu", "gpu" (NVIDIA CUDA), "mps" (Apple)
+```
+
+```bash
+pymiraw train data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary --accelerator cpu
+```
+
+| | CPU | GPU |
+|---|---|---|
+| Install | `pip install torch --index-url https://download.pytorch.org/whl/cpu`, then pyMIRAW: a much smaller download | the default `pip install` on Linux includes CUDA (needs an NVIDIA driver); on other systems take the command from [pytorch.org](https://pytorch.org/get-started/locally/) |
+| Check | | `python -c "import torch; print(torch.cuda.is_available())"` prints `True` |
+| One full training fold (14,000 sites, 10 epochs, paper regime) | 21 s (8 threads) | 14 s (NVIDIA T4) |
+| The 4,000 example sites | a few seconds | a few seconds |
+
+The paper's network is small, so a GPU helps little: everything in this README runs comfortably on a CPU-only machine.
+To hide a GPU from pyMIRAW, set `CUDA_VISIBLE_DEVICES=""`. `accelerator="auto"` also picks an Apple-silicon GPU (MPS)
+when there is one; that has not been tested.
+
+**CPU and GPU training give slightly different models.** They sum floating-point numbers in a different order, so the
+same seed ends in different weights: for CV fold 6, test accuracy 0.9286 on the CPU and 0.9231 on the GPU, the same AUC
+(0.978). Each device repeats its own result exactly. The committed results (`docs/results/`) were trained on a GPU, so
+`make verify-gates` matches them number by number on a GPU; after training on a CPU, the Gate 2 report judges the new
+models instead.
+
 ### Reproducing the paper's results
 
 The benchmarks need the authors' data archive (1 GB). Download it once and unpack the parts pyMIRAW uses into
@@ -339,7 +372,7 @@ Then, on 16 cores (times measured on this project's machine with a T4 GPU):
 |---|---|---|---|
 | **All gates, compared number by number with the committed results** | `make verify-gates` | 4-5 h | prints `ALL CHECKS PASSED` |
 | Gate 1 only: the benchmark with the original weights (10 test sets x 10 configurations) | `make parity` | 1.5-3 h | `runs/parity/comparison.csv` (committed: `docs/results/gate1_comparison.csv`) |
-| Site-level cross-validation only, paper regime (9 folds x 3 seeds, both orientations) | `make train-cv` | about 1 h | `runs/train_<orientation>/cv_<orientation>.csv` and the models |
+| Site-level cross-validation only, paper regime (9 folds x 3 seeds, both orientations) | `make train-cv` | 20-30 min (GPU or CPU) | `runs/train_<orientation>/cv_<orientation>.csv` and the models |
 | The Gate 2 verdict from the committed result files | `make gate2` | seconds | the table summarised in [3. Status](#3-status) |
 
 `make verify-gates` (`scripts/verify_gates.py`, results in `runs/verify/`) re-runs Gates 0-2 from scratch: Gate 1 with
