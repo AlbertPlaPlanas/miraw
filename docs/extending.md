@@ -12,7 +12,7 @@ saved and rebuilt:
 
 ```python
 import torch
-from pymiraw.models.base import SiteClassifier, register_model
+from pymiraw import SiteClassifier, register_model
 
 
 @register_model("conv1d")
@@ -30,20 +30,31 @@ class Conv1D(SiteClassifier):
         return {"name": "conv1d", "in_dim": self.in_dim, "channels": self.channels}
 ```
 
-Put it in `src/pymiraw/models/` and import it from `src/pymiraw/models/__init__.py`. Without that import
-the registry does not know about it (this bit us once: an empty registry).
+The registration must have run before a saved model of this type is loaded. For a model that is part of
+pyMIRAW, put it in `src/pymiraw/models/` and import it from `src/pymiraw/models/__init__.py` (without that
+import the registry is empty; this bit us once). In your own code, import the module that defines it first.
+
+Prediction runs in worker processes, and each one rebuilds the model from its saved file. Each worker
+imports the module that defines the model's class, so a class in any importable module works in parallel
+everywhere. A class defined in a notebook cell or a script's `__main__` cannot be imported. On Linux it still
+works, because the workers are forked copies of the notebook. Where workers are spawned (macOS, Windows),
+pyMIRAW predicts in the notebook's own process instead, with a warning: the results are the same, only slower.
 
 ## 2. Train it
 
 ```python
-from pymiraw.training.trainer import TrainConfig, train_fold
-cfg = TrainConfig(model="conv1d", model_params={"channels": 32}, loss="xent",
-                  site_orientation="natural", val_fraction=0.0, shuffle=False, max_epochs=10)
-net, metrics, encoder = train_fold(cfg, x_train, y_train, x_test, y_test, workdir)
+import pymiraw
+
+model = pymiraw.train(train_sites, test_sites, model="conv1d", model_params={"channels": 32})
+model.meta["metrics"]               # test-set metrics
+model.save("conv1d.pt")             # then: pymiraw.predict(pairs, "conv1d.pt")
 ```
 
-`tests/functional/test_training_smoke.py::test_new_architecture_trains_through_the_same_stack` is a
-working example. Cross-validation over the released folds is `pymiraw.training.cv.run_cv`.
+`train_sites` is a DataFrame (`mirna_seq`, `site_seq`, `label`) or encoded `(x, y)` arrays. The other
+`TrainConfig` fields keep the paper's regime unless overridden (`pymiraw.TrainConfig.paper()`).
+Cross-validation over the released folds: `pymiraw.cross_validate(folds_dir, pymiraw.TrainConfig.paper(model="conv1d"))`.
+Working examples: the tutorial notebook (section 3.5) and
+`tests/functional/test_training_smoke.py::test_new_architecture_trains_through_the_same_stack`.
 
 ## 3. Different input encoding
 
@@ -62,6 +73,6 @@ differently, so **rerun the orientation comparison** (`pymiraw train --orientati
 
 A model is only a candidate to replace the original weights if it passes Gate 2
 (`docs/PLAN.md`, section 6): one-sided 99 % non-inferiority to the paper's models at site level and at
-gene level, with margins 0.01 (accuracy, F1) and 0.005 (AUC). Train in the paper regime
-(`--no-shuffle --val-fraction 0`) first for a like-for-like comparison, and use `make gate2`.
+gene level, with margins 0.02 (accuracy, F1) and 0.005 (AUC). Train in the paper regime first (`TrainConfig.paper()`,
+the default of `pymiraw.train` and `pymiraw train`) for a like-for-like comparison, and use `make gate2`.
 Run `pymiraw predict --model your_model.pt` to use it; the default stays `--original-weights`.

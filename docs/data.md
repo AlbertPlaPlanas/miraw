@@ -1,12 +1,14 @@
 # Data
 
-pyMIRAW needs three kinds of data. None of the heavy files are stored in git.
+Predicting needs no data beyond the package: the original weights and small examples are bundled. The heavy paper
+data is only needed for the benchmarks and full-size training, and is never stored in git.
 
 | What | Where it comes from | Used by |
 |---|---|---|
-| Original miRAW weights (`bestModel.bin`, 3 MB) | `PLOSComb.7z` (`NetworkModel/`) | `--original-weights` (the default) |
-| Paper test sets and CV folds | `PLOSComb.7z` (`Data/TestData/balanced10`, `Data/CrossVal/RelaxedPW60_14K_35K/binary`) | `pymiraw parity`, `pymiraw train` |
-| Published results (`GlobalSummary.xls`) | `PLOSComb.7z` (`Results/`) | parity comparison |
+| Original miRAW weights | bundled: `src/pymiraw/resources/miraw_original.pt` (1.75 MB, a bit-exact conversion of `PLOSComb.7z` `NetworkModel/bestModel.bin`) | `model="original"` / `--original-weights` (the default) |
+| Example pairs and training sites | bundled: `example_pairs.tsv` (24 pairs from balanced test set 0), `example_sites.tsv.gz` (5,000 sites from CV fold 6), built by `scripts/make_example_data.py` | `pymiraw.example_pairs()`, `pymiraw.example_sites()`, tutorial, tests |
+| Published results | bundled: `paper_global_summary.csv` (from `Results/GlobalSummary.xls`), `paper_cv_xent_models_rescored.csv` | Gate 1 and Gate 2 comparisons |
+| Paper test sets, CV folds, the paper's fold models | `PLOSComb.7z` (`Data/TestData/balanced10`, `Data/CrossVal/RelaxedPW60_14K_35K/binary`, `ResultsCV/`) | `pymiraw parity`, `pymiraw train`, `scripts/verify_gates.py` |
 
 ## Getting the data
 
@@ -18,23 +20,24 @@ curl -L -o PLOSComb.7z https://bitbucket.org/bipous/miraw_data/raw/master/PLOSCo
 pymiraw data unpack-archive PLOSComb.7z          # unpacks the parts pyMIRAW uses into data/original/
 ```
 
-`data/original/` is gitignored. To keep the weights elsewhere, set
-`PYMIRAW_ORIGINAL_WEIGHTS=/path/to/bestModel.bin`.
+`data/original/` is gitignored.
 
-The weights are looked up in this order: `$PYMIRAW_ORIGINAL_WEIGHTS`,
-`data/original/NetworkModel/bestModel.bin`, then the artefact mirror listed in
-`data/manifest.yaml` (sha256 verified; requires credentials for the mirror).
+The original weights are `$PYMIRAW_ORIGINAL_WEIGHTS` if set (a `.pt` or DL4J `.bin` file), else the bundled copy;
+nothing is downloaded. The project's S3 mirror (`data/manifest.yaml`, sha256 verified, credentials required) is only an
+archive of record for the maintainers.
 
 ## File formats
 
 * **Unified file** (input of `predict` / `evaluate`): TSV with columns
   `miRNA, gene_name, EnsemblId, [Positive_Negative,] Mature_mirna_transcript, 3UTR_transcript`.
-  An example is `tests/fixtures/paper_pairs.tsv`.
-* **CV fold files**: the paper's binarized site tables (one-hot miRNA followed by the one-hot site,
-  label last). Train files alternate labels 1,0,1,0,... which matters for training order
-  (see `pymiraw train --no-shuffle`).
-* **Outputs**: `targetPredictionOutput.csv` (per pair) and `positiveTargetSites.csv` (per site),
-  written in the original column layout so old analysis scripts keep working.
+  An example is `src/pymiraw/resources/example_pairs.tsv`. The Python API also takes a pandas DataFrame
+  (`mirna_seq`, `utr`, optional `miRNA`, `gene_name`, `EnsemblId`, `label`) or `(mirna_seq, utr)` tuples.
+* **CV fold files**: the paper's binarized site tables, headerless CSV: the label (1/0) first, then the one-hot miRNA
+  (30 nt x 4) and the one-hot site (40 nt x 4, stored 3'->5' as the original encoded it). Train files alternate labels
+  1,0,1,0,... which matters for training order (the paper regime trains in file order: `TrainConfig.paper()`, the
+  default of `pymiraw.train` and `pymiraw train`).
+* **Outputs**: `targetPredictionOutput.csv` (per pair) and `targetSites.csv` (per candidate site), plus `config.yaml`
+  and, for `evaluate`, `metrics.json`. The per-pair file keeps the original column layout.
 
 ## Caches and run output
 
@@ -59,5 +62,7 @@ The weights are looked up in this order: `$PYMIRAW_ORIGINAL_WEIGHTS`,
 
 ## Licences
 
-The miRAW code, weights and archive are released under the MIT licence by their author (see `LICENSE`). Third-party sources behind the
-paper's dataset (for example TarBase) have their own terms; pyMIRAW does not redistribute them.
+The miRAW code, weights and archive are released under the MIT licence by their author (see `LICENSE`). pyMIRAW bundles
+the weights and two small samples of the archive (24 test pairs and 5,000 training sites: sequences and labels). The
+third-party sources behind the paper's dataset (for example TarBase) have their own terms; pyMIRAW does not
+redistribute those databases.

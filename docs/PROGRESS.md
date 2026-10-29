@@ -12,7 +12,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 | 2 Candidate sites and filters | **done** for Default/Personalized/PITA/TargetScan + AccessibilityEnergy. SpecificZones/ReservedZones filters are not ported (unused by the paper configs) |
 | 3 Prediction and evaluation | **done; Gate 1 PASSED** (100/100 runs, all config means within 0.005; tolerance now 0.02) |
 | 4 Training stack | **done; Gate 2 PASSED** (rank-based bound, margins acc/F1 0.02, AUC 0.005; set post hoc, see Log 22:00); fragile rows: paired gene accuracy (slack 0.0005), site AUC (0.0009). Not promoted (owner decision needed) |
-| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, AE configs for seeds 1-2 of fold 6 |
+| 5 Hardening and docs | `docs/extending.md`, `docs/data.md`, lockfile, README, high-level API + bundled weights + tutorial notebook (branch `restructure-api`, all gates re-verified identical) done; not done: Java `miRAW.jar` oracle run, profiling, v1.0.0 tag, AE configs for seeds 1-2 of fold 6 |
 
 ## Gate results so far
 
@@ -67,6 +67,55 @@ Plan and decisions: [PLAN.md](PLAN.md).
 4. Commit (nothing has been committed yet by the assistant; review `git status`), push, check GitHub push protection is on.
 
 ## Log (newest first)
+
+* 2026-10-29 (08:30): README section "Running on CPU or GPU". Prediction always runs on CPU cores (ViennaRNA is CPU-only;
+  the network stays on the CPU in each worker); training follows `accelerator` (`auto` = GPU if PyTorch finds one). New
+  `pymiraw train --accelerator`. Measured, CV fold 6 full training (14,000 sites, paper regime): GPU (T4) 14 s, CPU
+  (8 threads) 21 s; test accuracy 0.9231 (GPU, = the committed results) vs 0.9286 (CPU), AUC 0.978 both.
+  `CUDA_VISIBLE_DEVICES=""` with `auto` gives the CPU result exactly. `make train-cv` time corrected to 20-30 min.
+
+* 2026-10-29 (08:00): **README revised twice for the new API; tutorial predicts from a pandas DataFrame.**
+  * README section 2 reorganised (install -> quick start -> notebook -> input -> output -> options -> ViennaRNA -> training ->
+    reproducing the paper -> developers); every Python block and CLI example was run in a fresh folder (outputs match the
+    comments), all 19 internal links and 15 file links resolve.
+  * Fixes found by the revision: `pymiraw train` now defaults to the paper regime (`--no-shuffle`, `--val-fraction 0`), as
+    `pymiraw.train` already did; `pymiraw.load_config` exported and `pymiraw.<submodule>` (e.g. `pymiraw.config`) works in a
+    fresh interpreter; `scripts/verify_gates.py` works on a fresh clone (retrains first, then uses the retrained models when
+    the committed `runs/train_paperRegime_*` are absent); `docs/data.md` (label is the first column of the CV files; bundled
+    data and its licence; output names) and `docs/extending.md` updated. 141 tests pass.
+  * Notebook section 1.4: a three-pair DataFrame (let-7a vs a 3'UTR with a let-7 site: 0.9996 target; miR-21 vs the same
+    3'UTR: -0.98; let-7a vs a 3'UTR without a site: -0.89).
+
+* 2026-10-29 (02:30): **Branch `restructure-api` verified: every gate re-run from scratch on the refactored code gives the
+  committed numbers exactly.** `scripts/verify_gates.py` (all steps, `runs/verify/`, ~4 h on this machine): Gate 0 identical;
+  Gate 1 from an empty sites folder 100/100 runs with identical TP/FP/TN/FN, PASS (largest config diff 0.0049); Gate 2 gene
+  level, all 19 model runs (committed retrained models + paper fold models): 1030 + 900 runs, 0 count differences; site level:
+  retraining reproduces all 54 runs (27 old-default weights bit-identical); Gate 2 report byte-identical to the committed one,
+  OVERALL PASS. Tutorial notebook executed with outputs (172 s on 16 cores; `scripts/build_tutorial_notebook.py`,
+  `scripts/run_notebook.py`). README logo (`docs/logo.png`, 960x540).
+* 2026-10-28 (23:30): **Branch `restructure-api`: developer-friendly API, self-contained package.**
+  * Original weights bundled as `src/pymiraw/resources/miraw_original.pt` (1.75 MB, bit-exact conversion of `NetworkModel/bestModel.bin`
+    by `scripts/bundle_original_weights.py`, sha256 pinned in `pymiraw.resources`); `original_weights_path()` = `$PYMIRAW_ORIGINAL_WEIGHTS`
+    or the bundled file, no S3. Paper reference tables moved from `tests/fixtures/` to `pymiraw/resources/`; example data bundled
+    (`example_pairs.tsv`, 24 pairs; `example_sites.tsv.gz`, 5000 fold-6 sites decoded to sequences, re-encoding exact; `scripts/make_example_data.py`).
+  * New `pymiraw.api` (lazy top-level exports): `predict`, `predict_pair`, `evaluate`, `load_model`, `train`, `cross_validate`,
+    `encode_sites`; `Model` (network + encoder + meta), `Predictions` (`.genes`, `.sites`, `.metrics()`, `.save()`); inputs as file,
+    DataFrame or `(mirna, utr)` tuples; progress bar. `TrainConfig` moved to `pymiraw.config` (+ `TrainConfig.paper()`);
+    `PredictConfig` rejects unknown keys, accepts `Path`s; `backend_args` replaced by `vienna_bin`. CLI is a thin layer over the API;
+    `python -m pymiraw`. Scoring always single-threaded (bit-identical across paths). Lightning and ViennaRNA are core dependencies.
+  * Equivalence: the 11 CLI runs (example pairs x 10 configs + paper pairs) before/after the refactor give **byte-identical**
+    outputs; Gate 0 re-run: fold-6 accuracy 0.9351428571, paper fold models re-scored identical. 137 tests pass.
+  * Self-contained check: the wheel (1.8 MB, includes `resources/`) installed with pip into a new venv (torch 2.15 CPU,
+    ViennaRNA 2.7.2 from PyPI), run outside the repo with no data: predictions on the 24 example pairs identical to the
+    pre-refactor baseline; demo training AUC 0.9272 (same as the source tree on CPU); `pymiraw --help` works.
+  * Retraining (`verify_gates.py site`): the 27 old-default models (folds 0-8 x seeds 0-2, paper regime) are **bit-identical**
+    to the committed `runs/train_paperRegime_old-default/*.pt` (max |dw| = 0); all 54 runs (both orientations) have the
+    committed confusion counts (`runs/verify/results_retrained/cv_paper_regime.csv`).
+  * Custom architectures and spawned workers (macOS/Windows): each worker now imports the module of the model's class (a
+    spawned worker imports only pyMIRAW, so even a class in an importable module failed before); a class that exists only in
+    a notebook/`__main__` is predicted in-process with a warning when workers are not forked. Tests: real spawn run, fallback.
+    140 tests pass.
+  * Tutorial notebook `notebooks/pymiraw_tutorial.ipynb` (quick start, configuration, training/custom weights/architectures).
 
 * 2026-10-28 (23:00): README figures and citation. New: a pipeline flow diagram (Mermaid), two charts (light/dark SVGs in
   `docs/figures/`, drawn from the committed result files by `scripts/make_readme_figures.py`; byte-reproducible; needs matplotlib,

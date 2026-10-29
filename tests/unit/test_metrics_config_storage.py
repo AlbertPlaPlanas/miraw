@@ -76,14 +76,22 @@ def test_legacy_properties_parsing(tmp_path):
     assert (cfg.max_site_length, cfg.seed_alignment_offset) == (40, 5) and cfg.uses_original_weights
 
 
-def test_local_repo_weights_are_used_before_the_mirror(tmp_path, monkeypatch):
-    from pymiraw import storage
+def test_original_weights_default_to_the_bundled_copy(monkeypatch):
+    from pymiraw import resources
 
-    f = tmp_path / "bestModel.bin"
-    f.write_bytes(b"x")
     monkeypatch.delenv(ORIGINAL_WEIGHTS_ENV, raising=False)
-    monkeypatch.setattr(storage, "LOCAL_WEIGHTS", f)
-    assert storage.original_weights_path() == f
+    assert original_weights_path() == resources.original_weights() and original_weights_path().is_file()
+    assert resolve_model_path("original") == str(resources.original_weights())
+
+
+def test_predict_config_accepts_paths(tmp_path):
+    cfg = PredictConfig(input_file=tmp_path / "a.tsv", sites_dir=tmp_path, cache_dir=tmp_path, model=tmp_path / "m.pt")
+    assert cfg.sites_dir == str(tmp_path) and cfg.model == str(tmp_path / "m.pt")
+
+
+def test_predict_config_rejects_unknown_keys():
+    with pytest.raises(ValueError):
+        PredictConfig(backend_args={"bin_dir": "/x"})  # a typo or an old key must not be silently ignored
 
 
 def test_unpack_archive_flattens_and_filters(tmp_path):
@@ -104,27 +112,30 @@ def test_unpack_archive_flattens_and_filters(tmp_path):
 
 
 def test_vienna_bin_reaches_the_pipeline_config(monkeypatch, tmp_path):
-    """--vienna-bin must become backend_args.bin_dir (the README promises an exact-reproduction recipe)."""
+    """--vienna-bin must reach the run configuration (the README promises an exact-reproduction recipe)."""
     from typer.testing import CliRunner
 
-    from pymiraw import cli
-    from pymiraw.prediction import pipeline
+    from pymiraw import api, cli
 
     seen = {}
 
-    def fake_predict(input_file, cfg, workers=None, limit=None):
-        seen.update(cfg)
+    def fake_predict_pairs(pairs, cfg, model=None, workers=None, progress=False):
+        seen["cfg"] = cfg
         return []
 
-    f = tmp_path / "w.bin"
-    f.write_bytes(b"x")
     inp = tmp_path / "in.tsv"
     inp.write_text("miRNA\tgene_name\tEnsemblId\tMature_mirna_transcript\t3UTR_transcript\n")
-    monkeypatch.setattr(pipeline, "predict_file", fake_predict)
-    monkeypatch.setenv(ORIGINAL_WEIGHTS_ENV, str(f))
+    monkeypatch.setattr(api, "predict_pairs", fake_predict_pairs)
     args = ["predict", str(inp), "--original-weights", "--output-dir", str(tmp_path / "o"), "--name", "x"]
     r = CliRunner().invoke(cli.app, [*args, "--backend", "cli", "--vienna-bin", "/opt/ref/bin"])
     assert r.exit_code == 0, r.output
-    assert seen["backend"] == "cli" and seen["backend_args"] == {"bin_dir": "/opt/ref/bin"}
-    seen.clear()
-    assert CliRunner().invoke(cli.app, args).exit_code == 0 and seen["backend_args"] == {}
+    assert seen["cfg"].backend == "cli" and seen["cfg"].vienna_bin == "/opt/ref/bin"
+    assert seen["cfg"].model == "original"
+    assert CliRunner().invoke(cli.app, args).exit_code == 0 and seen["cfg"].vienna_bin is None
+
+
+def test_vienna_bin_without_the_cli_backend_is_an_error():
+    from pymiraw.prediction.pipeline import make_folding_backend
+
+    with pytest.raises(ValueError, match="cli"):
+        make_folding_backend(PredictConfig(vienna_bin="/opt/ref/bin"))

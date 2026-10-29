@@ -10,8 +10,10 @@ from pathlib import Path
 import pandas as pd
 from scipy.stats import wilcoxon
 
+from pymiraw import resources
+
 root = Path(sys.argv[1] if len(sys.argv) > 1 else "runs")
-paper = pd.read_csv(Path(__file__).resolve().parents[1] / "tests/fixtures/paper_global_summary.csv")
+paper = resources.paper_global_summary()
 rows = []
 for d in sorted(root.glob("gene_*_f*_s*")):
     if not d.is_dir():

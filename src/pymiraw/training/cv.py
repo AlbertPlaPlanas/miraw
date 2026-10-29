@@ -8,12 +8,11 @@ from pathlib import Path
 
 import pandas as pd
 
+from pymiraw import resources
+from pymiraw.config import TrainConfig
 from pymiraw.models.artifact import save_artifact
 from pymiraw.training.data import load_fold
-from pymiraw.training.trainer import CollapsedModelError, TrainConfig, train_fold
-
-# the paper's own fold models re-scored with our metric code (their recorded AUC used coarse thresholds)
-PAPER_CV = Path(__file__).resolve().parents[3] / "tests" / "fixtures" / "paper_cv_xent_models_rescored.csv"
+from pymiraw.training.trainer import CollapsedModelError, train_fold
 
 
 def run_cv(folds_dir, cfg: TrainConfig, folds=range(9), seeds=(0,), out_dir=None) -> pd.DataFrame:
@@ -42,7 +41,7 @@ def run_cv(folds_dir, cfg: TrainConfig, folds=range(9), seeds=(0,), out_dir=None
 
 def compare_with_paper(df: pd.DataFrame) -> dict:
     """Mean accuracy/AUC over non-collapsed runs vs the paper's XENT CV (acc 0.921, AUC 0.958)."""
-    paper = pd.read_csv(PAPER_CV)
+    paper = resources.paper_cv_models()  # re-scored with our metric code (the recorded AUC used coarse thresholds)
     ok = df[~df.collapsed]
     return {
         "runs": len(df),
