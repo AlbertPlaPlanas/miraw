@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 from scipy.stats import wilcoxon
 
-from pymiraw import resources
+from miraw import resources
 
 root = Path(sys.argv[1] if len(sys.argv) > 1 else "runs")
 paper = resources.paper_global_summary()

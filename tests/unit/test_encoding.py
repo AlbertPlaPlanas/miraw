@@ -3,7 +3,7 @@ import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
-from pymiraw.encoding.onehot import OneHotFlat, normalize_orientation, one_hot
+from miraw.encoding.onehot import OneHotFlat, normalize_orientation, one_hot
 
 
 def test_nucleotide_codes_are_c_a_g_u():

@@ -3,8 +3,8 @@
 Run this after any change that could touch results (refactors, dependency updates). Steps (default: all, in this order):
 
   gate0  bundled original model on CV fold 6 = the paper's 0.9351428571; the 9 paper fold models re-scored =
-         pymiraw/resources/paper_cv_xent_models_rescored.csv.
-  gate1  `pymiraw parity` with the original weights, 10 sets x 10 configs, into a fresh sites folder (site
+         miraw/resources/paper_cv_xent_models_rescored.csv.
+  gate1  `miraw parity` with the original weights, 10 sets x 10 configs, into a fresh sites folder (site
          finders and accessibility filter recomputed; ViennaRNA window folds come from the fold cache):
          per-run TP/FP/TN/FN must equal docs/results/gate1_all_sets.csv, and the gate must pass.
   site   retrain the paper regime (folds 0-8 x seeds 0-2, both orientations) and compare with
@@ -18,7 +18,7 @@ Run this after any change that could touch results (refactors, dependency update
   report Gate 2 report (scripts/gate2_report.py) on the re-run results.
 
 Usage: python scripts/verify_gates.py [steps...] [--out runs/verify] [--workers 15]
-Needs data/original (pymiraw data unpack-archive PLOSComb.7z). On a fresh clone the default steps take about
+Needs data/original (miraw data unpack-archive PLOSComb.7z). On a fresh clone the default steps take about
 4-5 hours on 16 cores and a GPU. Exit code 0 only if every comparison and gate passes.
 """
 
@@ -34,21 +34,21 @@ import numpy as np
 import pandas as pd
 import torch
 
-from pymiraw import resources
-from pymiraw.config import TrainConfig
-from pymiraw.evaluation.metrics import roc_auc
-from pymiraw.evaluation.parity import CONFIGS, compare_with_paper, run_parity
-from pymiraw.models.artifact import load_artifact
-from pymiraw.storage import ORIGINAL_DIR, original_weights_path
-from pymiraw.training.cv import run_cv
-from pymiraw.training.data import load_csv
+from miraw import resources
+from miraw.config import TrainConfig
+from miraw.evaluation.metrics import roc_auc
+from miraw.evaluation.parity import CONFIGS, compare_with_paper, run_parity
+from miraw.models.artifact import load_artifact
+from miraw.storage import ORIGINAL_DIR, original_weights_path
+from miraw.training.cv import run_cv
+from miraw.training.data import load_csv
 
 ROOT = Path(__file__).resolve().parents[1]
 COMMITTED = ROOT / "docs/results"
 TEST_DIR = ORIGINAL_DIR / "Data/TestData/balanced10"
 FOLDS_DIR = ORIGINAL_DIR / "Data/CrossVal/RelaxedPW60_14K_35K/binary"
 PAPER_FOLDS = ORIGINAL_DIR / "Results/ResultsCV/VeryDeepXENT14K_e10"  # Set<f>/bestModel.bin: the paper's CV fold models
-FOLD_CACHE = Path.home() / ".cache/pymiraw/foldcache"
+FOLD_CACHE = Path.home() / ".cache/miraw/foldcache"
 COUNTS = ["TP", "FP", "TN", "FN"]
 failures: list[str] = []
 

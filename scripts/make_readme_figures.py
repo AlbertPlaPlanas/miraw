@@ -11,7 +11,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
-from pymiraw import resources  # noqa: E402
+from miraw import resources  # noqa: E402
 
 root = Path(__file__).resolve().parents[1]
 out = root / "docs/figures"
@@ -73,7 +73,7 @@ def gate1(t, name):
         ax.set_xlim(-0.03, 0.03)
         ax.set_xticks([-0.02, -0.01, 0, 0.01, 0.02])
         ax.set_xticklabels(["−0.02", "−0.01", "0", "+0.01", "+0.02"])
-        ax.set_title(f"{metric}: pyMIRAW − paper", color=t["ink"], fontsize=10, loc="left")
+        ax.set_title(f"{metric}: miRAW − paper", color=t["ink"], fontsize=10, loc="left")
         ax.text(
             GATE1_TOLERANCE - 0.001, -0.75, "Gate 1 tolerance", color=t["muted"], fontsize=8, ha="right", va="bottom"
         )
@@ -83,7 +83,7 @@ def gate1(t, name):
     heading(
         fig,
         t,
-        "With the original weights, pyMIRAW reproduces the published benchmark",
+        "With the original weights, miRAW reproduces the published benchmark",
         "Mean over the paper's 10 balanced test sets per configuration "
         "(finder, NF = no filter, AE = accessibility filter)",
     )
@@ -132,7 +132,7 @@ def gate2(t, name):
             edgecolor=t["surface"],
             linewidth=1.5,
             zorder=3,
-            label="pyMIRAW, retrained",
+            label="miRAW, retrained",
         )
         ax.set_xticks(x)
         ax.set_xlabel("cross-validation fold", color=t["ink2"], fontsize=9)
@@ -164,8 +164,8 @@ def gate2(t, name):
     heading(
         fig,
         t,
-        "Retrained from scratch, pyMIRAW models vary from fold to fold as much as the paper's own",
-        "Each dot is one fold's model (pyMIRAW: mean over its seeds). Same folds, pipeline and ViennaRNA for both.",
+        "Retrained from scratch, miRAW models vary from fold to fold as much as the paper's own",
+        "Each dot is one fold's model (miRAW: mean over its seeds). Same folds, pipeline and ViennaRNA for both.",
     )
     fig.subplots_adjust(left=0.07, right=0.985, top=0.72, bottom=0.12, wspace=0.16)
     fig.savefig(
@@ -178,9 +178,7 @@ def gate2(t, name):
 
 if __name__ == "__main__":
     out.mkdir(parents=True, exist_ok=True)
-    plt.rcParams.update(
-        {"font.family": "sans-serif", "svg.fonttype": "none", "font.size": 9, "svg.hashsalt": "pymiraw"}
-    )
+    plt.rcParams.update({"font.family": "sans-serif", "svg.fonttype": "none", "font.size": 9, "svg.hashsalt": "miraw"})
     for theme in THEMES.values():
         gate1(theme, "gate1_parity")
         gate2(theme, "gate2_folds")

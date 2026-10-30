@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from pymiraw.evaluation.noninferiority import (
+from miraw.evaluation.noninferiority import (
     CONFIDENCE,
     MARGINS,
     METHOD,

@@ -1,10 +1,10 @@
 """Finder logic with a scripted fake folding backend (no ViennaRNA needed)."""
 
-from pymiraw.folding.base import Fold, FoldService
-from pymiraw.sites.finders.default import DefaultFinder, PersonalizedFinder
-from pymiraw.sites.finders.pita import PitaFinder
-from pymiraw.sites.finders.registry import get_site_finder
-from pymiraw.sites.finders.targetscan import TargetScanFinder
+from miraw.folding.base import Fold, FoldService
+from miraw.sites.finders.default import DefaultFinder, PersonalizedFinder
+from miraw.sites.finders.pita import PitaFinder
+from miraw.sites.finders.registry import get_site_finder
+from miraw.sites.finders.targetscan import TargetScanFinder
 
 MIRNA = "UGAGGUAGUAGGUUGUAUAGUU"  # let-7a, 22 nt
 

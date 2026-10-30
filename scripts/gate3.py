@@ -11,11 +11,11 @@ Steps (default: all):
           TestData/Data/fullUnifiedFile.csv. Checks: every pair is found exactly once with the paper's label, and
           the sequences equal those of the 10 balanced test sets.
   run     predict every configuration in chunks (resumable: finished chunks are kept) into runs/gate3/<config>/.
-  report  AUC, accuracy, F1, ... of pyMIRAW and of the paper on the same pairs -> docs/results/gate3_comparison.csv.
+  report  AUC, accuracy, F1, ... of miRAW and of the paper on the same pairs -> docs/results/gate3_comparison.csv.
           Exit code 0 only if the gate passes.
 
 Usage: python scripts/gate3.py [steps...] [--unified PATH] [--workers 14] [--configs miRAW|NF ...]
-Needs data/original (`pymiraw data unpack-archive PLOSComb.7z`) and, for `build`, fullUnifiedFile.csv (688 MB) from
+Needs data/original (`miraw data unpack-archive PLOSComb.7z`) and, for `build`, fullUnifiedFile.csv (688 MB) from
 https://bitbucket.org/bipous/miraw_-dl4mirnatargeting_code (TestData/Data/; get it with git, see docs/data.md).
 """
 
@@ -27,12 +27,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from pymiraw.config import PredictConfig
-from pymiraw.evaluation.metrics import gene_level_metrics, roc_auc
-from pymiraw.evaluation.noninferiority import MARGINS
-from pymiraw.evaluation.parity import CONFIGS, DISPLAY, FILTERS
-from pymiraw.prediction.pipeline import predict_pairs, read_unified, results_frame
-from pymiraw.storage import ORIGINAL_DIR, cache_dir
+from miraw.config import PredictConfig
+from miraw.evaluation.metrics import gene_level_metrics, roc_auc
+from miraw.evaluation.noninferiority import MARGINS
+from miraw.evaluation.parity import CONFIGS, DISPLAY, FILTERS
+from miraw.prediction.pipeline import predict_pairs, read_unified, results_frame
+from miraw.storage import ORIGINAL_DIR, cache_dir
 
 ROOT = Path(__file__).resolve().parents[1]
 PAPER = ORIGINAL_DIR / "Results/Evaluate_14K_FULL"

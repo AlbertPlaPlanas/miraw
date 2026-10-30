@@ -5,9 +5,9 @@ import numpy as np
 import pytest
 import torch
 
-from pymiraw.models.artifact import load_artifact, save_artifact
-from pymiraw.models.base import SiteClassifier, register_model
-from pymiraw.training.trainer import CollapsedModelError, TrainConfig, train_fold
+from miraw.models.artifact import load_artifact, save_artifact
+from miraw.models.base import SiteClassifier, register_model
+from miraw.training.trainer import CollapsedModelError, TrainConfig, train_fold
 
 torch.set_num_threads(2)  # tiny models: avoid thread oversubscription on busy or shared machines
 IN_DIM = 280  # 30 nt miRNA + 40 nt site, one-hot

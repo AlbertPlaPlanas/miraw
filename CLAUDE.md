@@ -1,6 +1,7 @@
 # Instructions for Claude Code sessions in this repo
 
-pyMIRAW is a Python/PyTorch port of miRAW. Work spans many sessions and machines, so the state of
+This repository is miRAW for Python (package, import and command `miraw`), a Python/PyTorch port of
+the original Java miRAW. Work spans many sessions and machines, so the state of
 the work lives in git, not in anyone's memory.
 
 1. **At the start of every session read `docs/PROGRESS.md` and `docs/PLAN.md`** (in that order).
@@ -12,6 +13,6 @@ the work lives in git, not in anyone's memory.
 3. **Keep the "Status" section of `README.md` current** (what is done, what remains to bring the original miRAW to Python) whenever the state changes.
 4. Never put credentials in any file. S3 access: `scripts/with-s3-creds.sh <cmd>` (reads the
    gitignored `.secrets.md`). Run `pre-commit install` once per clone.
-5. Use the conda env `pymiraw` (`conda env create -f environment.yml`, then `pip install -e . --no-deps`).
+5. Use the conda env `miraw` (`conda env create -f environment.yml`, then `pip install -e . --no-deps`).
 6. The original weights flag is `--original-weights` (default). Do not change a default model
    without passing the gates in PLAN.md section 6.

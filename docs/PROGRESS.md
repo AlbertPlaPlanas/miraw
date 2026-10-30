@@ -1,9 +1,9 @@
-# pyMIRAW progress log
+# miRAW progress log
 
 Read this first in a new session (see CLAUDE.md). Update it after every meaningful step.
 Plan and decisions: [PLAN.md](PLAN.md).
 
-## Status (2026-10-29)
+## Status (2026-10-30)
 
 | Phase | State |
 |---|---|
@@ -33,15 +33,15 @@ Plan and decisions: [PLAN.md](PLAN.md).
 
 ## Running jobs (started 2026-10-27, on the dev machine; outputs are in the gitignored `runs/`)
 
-* Gate 1: `pymiraw parity <balanced10 dir> --output-dir runs/parity --cache-dir ~/.cache/pymiraw/foldcache --sets 0-9 --workers 14`
+* Gate 1: `miraw parity <balanced10 dir> --output-dir runs/parity --cache-dir ~/.cache/miraw/foldcache --sets 0-9 --workers 14`
   (log `runs/parity.log`; resumable: rerun the same command; results land in `runs/parity/<config>_<set>/`;
   final comparison in `runs/parity/comparison.csv`; exit code 0 only if every config is within the tolerance, 0.02 since 2026-10-28).
-* Gate 2 / orientation: `pymiraw train <folds dir> --orientation {old-default,natural} --folds 0-8 --seeds 3`
+* Gate 2 / orientation: `miraw train <folds dir> --orientation {old-default,natural} --folds 0-8 --seeds 3`
   (logs `runs/train_<orientation>.log`, results `runs/train_<orientation>/cv_<orientation>.csv`).
 
 ## Where things are
 
-* Code: `src/pymiraw/` (folding, sites, encoding, models, training, prediction, evaluation, cli).
+* Code: `src/miraw/` (folding, sites, encoding, models, training, prediction, evaluation, cli).
 * Tests: `tests/unit`, `tests/functional` (88 pass; tests needing the original weights skip without S3).
 * Fixtures (committed): `tests/fixtures/` (paper pairs + expected output, 500 CV test rows,
   `paper_global_summary.csv` per-set paper metrics, `paper_cv_xent_best.csv` paper CV scores).
@@ -50,7 +50,7 @@ Plan and decisions: [PLAN.md](PLAN.md).
 * Not on S3 yet and needed to rerun benchmarks/training on another machine: the paper archive
   `PLOSComb.7z` (https://bitbucket.org/bipous/miraw_data, raw/master/PLOSComb.7z, 1 GB). It holds the
   10 balanced test sets (`Data/TestData/balanced10`), CV folds (`Data/CrossVal/RelaxedPW60_14K_35K/binary`)
-  and `Results/`. Now on S3 and in the manifest as `paper-archive` (`pymiraw data pull paper-archive`).
+  and `Results/`. Now on S3 and in the manifest as `paper-archive` (`miraw data pull paper-archive`).
 * Original Java code (for reading): https://bitbucket.org/bipous/miraw_-dl4mirnatargeting_code
 
 ## Findings worth remembering
@@ -59,28 +59,39 @@ Plan and decisions: [PLAN.md](PLAN.md).
 * No autoencoder pre-training; dropout 0.0; paper training = 10 epochs, no validation early stopping,
   "last" models collapsed to all-negative (so the best epoch by training loss was used).
 * DL4J `XENT` on a 2-way softmax = 2 x NLL (doubles the effective learning rate); implemented as such.
-* `pymiraw/models/__init__.py` must import `mlp`, otherwise the model registry is empty.
+* `miraw/models/__init__.py` must import `mlp`, otherwise the model registry is empty.
 * The bundled `TestData/ExperimentResults` of the original repo come from an old dev run and are NOT a valid oracle.
-* `pip install` into the base conda env can break `snowflake-connector-python` (needs `filelock<4`); use the `pymiraw` env.
+* `pip install` into the base conda env can break `snowflake-connector-python` (needs `filelock<4`); use the `miraw` env.
 
 ## Next steps
 
-1. Merge branch `gate3` (Gate 3 passed) into `main`.
+1. **Release 0.3.0 under the new name `miraw`** (branch `miraw-rename`). Owner steps, in this order: rename the GitHub
+   repository `pyMiraw` -> `miraw` (Settings -> General; GitHub redirects the old URLs), add pending trusted publishers
+   for the project `miraw` on PyPI and TestPyPI (repository `miraw`, workflow `publish.yml`, environments `pypi` /
+   `testpypi`), merge, optionally run the publish workflow manually (TestPyPI), then `git tag v0.3.0 && git push origin
+   v0.3.0`. `pymiraw` 0.2.0 stays on PyPI; optionally a last `pymiraw` release whose page points to `miraw`.
 2. **Test the installation in a truly fresh environment**: a machine or container with no ViennaRNA, no PyTorch and none
-   of the other dependencies preinstalled. Run the README's install command as written
-   (`pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"`), then `pymiraw --help`, the README
-   quick start, `pytest` and the tutorial notebook. The 2026-10-28 check used a new venv but with CPU PyTorch installed
-   first; also check a default (CUDA) PyTorch install, macOS and Windows (ViennaRNA wheels), and Python 3.11-3.13.
-3. **Publish on PyPI**: the package is ready (branch `pypi-package`); what is left needs the owner's accounts.
-   Follow `docs/releasing.md`: add the pending trusted publishers on PyPI and TestPyPI, create the GitHub environments
-   `pypi` and `testpypi`, run the publish workflow manually (TestPyPI and the 3-OS smoke test), then tag `v0.2.0`.
-   After publishing: `pip install pymiraw` in a fresh environment (item 2; the workflow's smoke test already covers a
-   clean install of the wheel on Linux, macOS and Windows).
+   of the other dependencies preinstalled. Run `pip install miraw`, then `miraw --help`, the README quick start,
+   `pytest` and the tutorial notebook. The publish workflow's smoke test covers a clean install of the wheel on Linux,
+   macOS and Windows (Python 3.11 and 3.13, CPU PyTorch); still to check: a default (CUDA) PyTorch install and Python 3.12.
 4. Owner decision on promoting a retrained model (Gate 2 passed; the original weights stay the default until then).
 5. Run the original `miRAW.jar` side by side (Java oracle, `environment-reference.yml`), also to compare speed.
 6. SpecificZones and ReservedZones filters (unused by the paper); profiling; the `v1.0.0` release.
 
 ## Log (newest first)
+
+* 2026-10-30: **Renamed to `miraw` (branch `miraw-rename`, version 0.3.0).** The distribution, the import package
+  (`src/pymiraw` -> `src/miraw`), the command (`miraw`), the conda envs (`miraw`, `miraw-ref`), the environment variables
+  (`MIRAW_DATA_DIR`, `MIRAW_ORIGINAL_WEIGHTS`, `MIRAW_CACHE`, `MIRAW_SECRETS_FILE`, `MIRAW_AWS_REGION`), the cache folder
+  (`~/.cache/miraw`), the tutorial (`notebooks/miraw_tutorial.ipynb`) and the GitHub URLs (`AlbertPlaPlanas/miraw`) all
+  use `miraw`; prose uses "miRAW", and "the original miRAW" where the Java version is meant. Unchanged: the S3 prefix
+  `.../dev/pyMIRAW/` (existing data), the bundled weights (same sha256; they do not contain the package name), the logo
+  image (still reads "pyMiRAW"; the owner will replace it) and the log entries below (written under the old name).
+  0.2.0 was published on PyPI and TestPyPI as `pymiraw` before the rename. Checks: `ruff check/format src tests scripts`
+  clean; `pytest` 141 passed, 1 skipped (as before); the tutorial re-executed with identical outputs (137 output lines,
+  0 differences after the name substitution); `scripts/verify_gates.py gate0` ALL CHECKS PASSED; wheel and sdist built,
+  `twine check --strict` passed; the wheel installed in a clean venv (CPU PyTorch) passes `scripts/smoke_installed.py`
+  with forked and with spawned workers.
 
 * 2026-10-30: **Publish workflow, macOS and Windows smoke tests failed** (`RuntimeError: An attempt has been made to
   start a new process before the current process has finished its bootstrapping phase`). Worker processes there are

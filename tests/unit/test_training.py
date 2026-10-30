@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from pymiraw.config import TrainConfig
-from pymiraw.training.data import loader, reorient, split_validation
-from pymiraw.training.trainer import CollapsedModelError, check_not_collapsed
+from miraw.config import TrainConfig
+from miraw.training.data import loader, reorient, split_validation
+from miraw.training.trainer import CollapsedModelError, check_not_collapsed
 
 
 def test_unshuffled_loader_keeps_file_order():
@@ -26,8 +26,8 @@ def test_cli_passes_shuffle_to_the_trainer(monkeypatch, tmp_path):
     import pandas as pd
     from typer.testing import CliRunner
 
-    from pymiraw import cli
-    from pymiraw.training import cv
+    from miraw import cli
+    from miraw.training import cv
 
     seen = {}
 

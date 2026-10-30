@@ -9,13 +9,13 @@ import pytest
 import torch
 from typer.testing import CliRunner
 
-from pymiraw import resources
-from pymiraw.cli import app
-from pymiraw.models.artifact import load_artifact
-from pymiraw.models.dl4j_import import load_dl4j
-from pymiraw.prediction.pipeline import predict_file, results_frame
-from pymiraw.storage import sha256_file
-from pymiraw.training.data import load_csv
+from miraw import resources
+from miraw.cli import app
+from miraw.models.artifact import load_artifact
+from miraw.models.dl4j_import import load_dl4j
+from miraw.prediction.pipeline import predict_file, results_frame
+from miraw.storage import sha256_file
+from miraw.training.data import load_csv
 
 
 def _site_scores(model, x: np.ndarray) -> np.ndarray:
@@ -118,12 +118,12 @@ def test_cli_default_model_is_the_original_weights(fixtures, tmp_path):
     assert r.exit_code == 0 and "original miRAW" in r.output
 
 
-REF_BIN = "/opt/conda/envs/pymiraw-ref/bin"
+REF_BIN = "/opt/conda/envs/miraw-ref/bin"
 
 
 @pytest.mark.reference
 @pytest.mark.skipif(
-    not os.path.exists(f"{REF_BIN}/RNAcofold"), reason="needs the pymiraw-ref environment (ViennaRNA 2.2.5)"
+    not os.path.exists(f"{REF_BIN}/RNAcofold"), reason="needs the miraw-ref environment (ViennaRNA 2.2.5)"
 )
 def test_exact_match_with_the_original_viennarna_version(paper_cfg, fixtures):
     """With ViennaRNA 2.2.5 (the version miRAW was built against) the port reproduces the published

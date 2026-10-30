@@ -5,10 +5,10 @@ data is only needed for the benchmarks and full-size training, and is never stor
 
 | What | Where it comes from | Used by |
 |---|---|---|
-| Original miRAW weights | bundled: `src/pymiraw/resources/miraw_original.pt` (1.75 MB, a bit-exact conversion of `PLOSComb.7z` `NetworkModel/bestModel.bin`) | `model="original"` / `--original-weights` (the default) |
-| Example pairs and training sites | bundled: `example_pairs.tsv` (24 pairs from balanced test set 0), `example_sites.tsv.gz` (5,000 sites from CV fold 6), built by `scripts/make_example_data.py` | `pymiraw.example_pairs()`, `pymiraw.example_sites()`, tutorial, tests |
+| Original miRAW weights | bundled: `src/miraw/resources/miraw_original.pt` (1.75 MB, a bit-exact conversion of `PLOSComb.7z` `NetworkModel/bestModel.bin`) | `model="original"` / `--original-weights` (the default) |
+| Example pairs and training sites | bundled: `example_pairs.tsv` (24 pairs from balanced test set 0), `example_sites.tsv.gz` (5,000 sites from CV fold 6), built by `scripts/make_example_data.py` | `miraw.example_pairs()`, `miraw.example_sites()`, tutorial, tests |
 | Published results | bundled: `paper_global_summary.csv` (from `Results/GlobalSummary.xls`), `paper_cv_xent_models_rescored.csv` | Gate 1 and Gate 2 comparisons |
-| Paper test sets, CV folds, the paper's fold models | `PLOSComb.7z` (`Data/TestData/balanced10`, `Data/CrossVal/RelaxedPW60_14K_35K/binary`, `Results/ResultsCV/`) | `pymiraw parity`, `pymiraw train`, `scripts/verify_gates.py` |
+| Paper test sets, CV folds, the paper's fold models | `PLOSComb.7z` (`Data/TestData/balanced10`, `Data/CrossVal/RelaxedPW60_14K_35K/binary`, `Results/ResultsCV/`) | `miraw parity`, `miraw train`, `scripts/verify_gates.py` |
 
 ## Getting the data
 
@@ -17,13 +17,13 @@ The archive is published by the miRAW authors at
 
 ```bash
 curl -L -o PLOSComb.7z https://bitbucket.org/bipous/miraw_data/raw/master/PLOSComb.7z
-pymiraw data unpack-archive PLOSComb.7z          # unpacks the parts pyMIRAW uses into data/original/
+miraw data unpack-archive PLOSComb.7z          # unpacks the parts miRAW uses into data/original/
 ```
 
 `data/original/` is gitignored. In a source checkout the paper data goes there; for an installed package
-(`pip install pymiraw`) the default is `~/.cache/pymiraw/original`. `PYMIRAW_DATA_DIR` overrides both.
+(`pip install miraw`) the default is `~/.cache/miraw/original`. `MIRAW_DATA_DIR` overrides both.
 
-The original weights are `$PYMIRAW_ORIGINAL_WEIGHTS` if set (a `.pt` or DL4J `.bin` file), else the bundled copy;
+The original weights are `$MIRAW_ORIGINAL_WEIGHTS` if set (a `.pt` or DL4J `.bin` file), else the bundled copy;
 nothing is downloaded. The project's S3 mirror (`data/manifest.yaml`, sha256 verified, credentials required) is only an
 archive of record for the maintainers.
 
@@ -31,27 +31,27 @@ archive of record for the maintainers.
 
 * **Unified file** (input of `predict` / `evaluate`): TSV with columns
   `miRNA, gene_name, EnsemblId, [Positive_Negative,] Mature_mirna_transcript, 3UTR_transcript`.
-  An example is `src/pymiraw/resources/example_pairs.tsv`. The Python API also takes a pandas DataFrame
+  An example is `src/miraw/resources/example_pairs.tsv`. The Python API also takes a pandas DataFrame
   (`mirna_seq`, `utr`, optional `miRNA`, `gene_name`, `EnsemblId`, `label`) or `(mirna_seq, utr)` tuples.
 * **CV fold files**: the paper's binarized site tables, headerless CSV: the label (1/0) first, then the one-hot miRNA
   (30 nt x 4) and the one-hot site (40 nt x 4, stored 3'->5' as the original encoded it). Train files alternate labels
   1,0,1,0,... which matters for training order (the paper regime trains in file order: `TrainConfig.paper()`, the
-  default of `pymiraw.train` and `pymiraw train`).
+  default of `miraw.train` and `miraw train`).
 * **Outputs**: `targetPredictionOutput.csv` (per pair) and `targetSites.csv` (per candidate site), plus `config.yaml`
   and, for `evaluate`, `metrics.json`. The per-pair file keeps the original column layout.
 
 ## Caches and run output
 
-* Folding results are memoised in `~/.cache/pymiraw/foldcache` (`--cache-dir`), keyed by sequences,
+* Folding results are memoised in `~/.cache/miraw/foldcache` (`--cache-dir`), keyed by sequences,
   constraint, backend and ViennaRNA version. It is safe to delete; the first run after that is slow.
 * **Saved candidate sites** (`--sites-dir DIR`): the binding sites found with ViennaRNA are saved per pair as
   parquet shards in `DIR` and loaded on later runs, so only the network and filters run again. Use it on
   `predict`, `evaluate` and `parity`, or `sites_dir:` in a YAML config:
 
   ```bash
-  pymiraw evaluate pairs.tsv --finder miRAW --sites-dir sites/   # first run: folds and saves
-  pymiraw evaluate pairs.tsv --finder miRAW --sites-dir sites/ --model my_model.pt   # no ViennaRNA
-  pymiraw evaluate pairs.tsv --sites-dir sites/ --require-sites  # error if a pair is not saved
+  miraw evaluate pairs.tsv --finder miRAW --sites-dir sites/   # first run: folds and saves
+  miraw evaluate pairs.tsv --finder miRAW --sites-dir sites/ --model my_model.pt   # no ViennaRNA
+  miraw evaluate pairs.tsv --sites-dir sites/ --require-sites  # error if a pair is not saved
   ```
 
   A pair is reused only if the miRNA, the 3'UTR, all finder settings and the folding backend and version
@@ -63,7 +63,7 @@ archive of record for the maintainers.
 
 ## Licences
 
-The miRAW code, weights and archive are released under the MIT licence by their author (see `LICENSE`). pyMIRAW bundles
-the weights and two small samples of the archive (24 test pairs and 5,000 training sites: sequences and labels). The
-third-party sources behind the paper's dataset (for example TarBase) have their own terms; pyMIRAW does not
+The original miRAW code, weights and archive are released under the MIT licence by their author (see `LICENSE`).
+This package bundles the weights and two small samples of the archive (24 test pairs and 5,000 training sites: sequences and labels). The
+third-party sources behind the paper's dataset (for example TarBase) have their own terms; miRAW does not
 redistribute those databases.
