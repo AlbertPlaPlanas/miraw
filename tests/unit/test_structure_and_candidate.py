@@ -1,7 +1,7 @@
 import pytest
 
-from pymiraw.sites.candidate import CandidateSite
-from pymiraw.sites.structure import (
+from miraw.sites.candidate import CandidateSite
+from miraw.sites.structure import (
     check_binding_from_structure,
     find_binding_start_in_sequence,
     get_pair_at,

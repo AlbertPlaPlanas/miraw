@@ -2,11 +2,11 @@
 
 import pytest
 
-from pymiraw.folding.base import FoldService
-from pymiraw.models.artifact import Model
-from pymiraw.prediction.pipeline import predict_pairs
-from pymiraw.sites.finders.default import DefaultFinder, PersonalizedFinder
-from pymiraw.sites.store import SiteStore, backend_id, finder_fingerprint, pair_key
+from miraw.folding.base import FoldService
+from miraw.models.artifact import Model
+from miraw.prediction.pipeline import predict_pairs
+from miraw.sites.finders.default import DefaultFinder, PersonalizedFinder
+from miraw.sites.store import SiteStore, backend_id, finder_fingerprint, pair_key
 from tests.unit.test_finders import MIRNA, FakeBackend, duplex_fold
 
 UTR = "ACGU" * 5 + "G" + "ACGU" * 24
@@ -62,8 +62,8 @@ def test_key_depends_on_backend_finder_and_sequences():
 
 def test_predict_file_reuses_saved_sites(tmp_path, monkeypatch):
     """Run 1 folds and saves; run 2 (same sites_dir) gives identical sites with zero folding calls."""
-    from pymiraw.models.base import SiteClassifier
-    from pymiraw.prediction import pipeline
+    from miraw.models.base import SiteClassifier
+    from miraw.prediction import pipeline
 
     backends = []
 
@@ -77,7 +77,7 @@ def test_predict_file_reuses_saved_sites(tmp_path, monkeypatch):
 
             return torch.tensor([[-1.0, 1.0]]).repeat(len(x), 1)
 
-    from pymiraw.encoding.onehot import OneHotFlat
+    from miraw.encoding.onehot import OneHotFlat
 
     monkeypatch.setattr(pipeline, "make_backend", fake_make_backend)
     inp = tmp_path / "pairs.tsv"
@@ -113,10 +113,10 @@ def test_accessibility_energies_are_saved_and_reused(tmp_path, monkeypatch):
     """Run 2 (other threshold, same sites_dir) folds nothing: sites and ΔG_open both come from disk."""
     import torch
 
-    from pymiraw.encoding.onehot import OneHotFlat
-    from pymiraw.folding.base import Fold
-    from pymiraw.models.base import SiteClassifier
-    from pymiraw.prediction import pipeline
+    from miraw.encoding.onehot import OneHotFlat
+    from miraw.folding.base import Fold
+    from miraw.models.base import SiteClassifier
+    from miraw.prediction import pipeline
 
     backends = []
 

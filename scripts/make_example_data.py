@@ -1,4 +1,4 @@
-"""Build the small example datasets bundled in ``pymiraw/resources/`` from the paper data (data/original/).
+"""Build the small example datasets bundled in ``miraw/resources/`` from the paper data (data/original/).
 
 * ``example_pairs.tsv``: 24 labelled miRNA-gene pairs (12 targets, 12 non-targets) with short 3'UTRs, from
   the paper's balanced test set 0, so a first prediction runs in seconds.
@@ -6,7 +6,7 @@
   released CV fold 6 (train and test split). The released rows are one-hot features; they are decoded back
   to sequences here and the script checks that re-encoding them gives the released features exactly.
 
-Usage: python scripts/make_example_data.py      (needs `pymiraw data unpack-archive PLOSComb.7z` first)
+Usage: python scripts/make_example_data.py      (needs `miraw data unpack-archive PLOSComb.7z` first)
 """
 
 from pathlib import Path
@@ -14,12 +14,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from pymiraw.encoding.onehot import OneHotFlat
-from pymiraw.training.data import MIRNA_LEN, SITE_LEN, load_csv
+from miraw.encoding.onehot import OneHotFlat
+from miraw.training.data import MIRNA_LEN, SITE_LEN, load_csv
 
 root = Path(__file__).resolve().parents[1]
 original = root / "data/original/Data"
-out = root / "src/pymiraw/resources"
+out = root / "src/miraw/resources"
 NT = np.array(list("CAGU"))
 
 

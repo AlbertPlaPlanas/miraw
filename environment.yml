@@ -1,4 +1,4 @@
-name: pymiraw
+name: miraw
 channels:
   - conda-forge
   - bioconda

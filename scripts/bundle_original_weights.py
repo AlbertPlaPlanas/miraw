@@ -1,14 +1,14 @@
 """Convert the paper's DL4J model (data/original/NetworkModel/bestModel.bin) into the bundled
-``src/pymiraw/resources/miraw_original.pt`` and check the conversion is bit-exact.
+``src/miraw/resources/miraw_original.pt`` and check the conversion is bit-exact.
 
-Usage: python scripts/bundle_original_weights.py      (needs `pymiraw data unpack-archive PLOSComb.7z` first)
-Then update ORIGINAL_WEIGHTS_SHA256 in src/pymiraw/resources/__init__.py with the printed value.
+Usage: python scripts/bundle_original_weights.py      (needs `miraw data unpack-archive PLOSComb.7z` first)
+Then update ORIGINAL_WEIGHTS_SHA256 in src/miraw/resources/__init__.py with the printed value.
 """
 
 import torch
 
-from pymiraw import resources, storage
-from pymiraw.models.artifact import load_artifact, save_artifact
+from miraw import resources, storage
+from miraw.models.artifact import load_artifact, save_artifact
 
 src = storage.ORIGINAL_DL4J
 if storage.sha256_file(src) != resources.SOURCE_DL4J_SHA256:

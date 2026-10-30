@@ -1,6 +1,6 @@
-"""Write notebooks/pymiraw_tutorial.ipynb from the cells below (no outputs; then run scripts/run_notebook.py).
+"""Write notebooks/miraw_tutorial.ipynb from the cells below (no outputs; then run scripts/run_notebook.py).
 
-Usage: python scripts/build_tutorial_notebook.py notebooks/pymiraw_tutorial.ipynb
+Usage: python scripts/build_tutorial_notebook.py notebooks/miraw_tutorial.ipynb
 """
 
 import sys
@@ -19,9 +19,9 @@ def code(s):
 
 
 md("""
-# pyMIRAW tutorial: predict miRNA targets, configure runs, train your own models
+# miRAW tutorial: predict miRNA targets, configure runs, train your own models
 
-pyMIRAW is a Python port of **miRAW** (Pla, Zhong and Rayner, *PLoS Comput Biol* 2018,
+This is the Python version of **miRAW** (Pla, Zhong and Rayner, *PLoS Comput Biol* 2018,
 [doi:10.1371/journal.pcbi.1006185](https://doi.org/10.1371/journal.pcbi.1006185)). Given a mature miRNA and a
 gene's 3'UTR, it finds candidate binding sites, scores each one with a deep neural network and says whether the
 gene is a target. **The original miRAW weights come with the package**, so there is nothing to download or set up.
@@ -34,26 +34,26 @@ The notebook has three parts:
 3. **[Training and custom models](#3.-Training-and-custom-models)**: train in the paper's regime, save and reuse your own
    weights, change the training settings, plug in a new architecture.
 
-If you use pyMIRAW, please cite the original miRAW paper (see the end of this notebook).
+If you use miRAW, please cite the original miRAW paper (see the end of this notebook).
 """)
 
 md("""
 ## Setup
 
-If pyMIRAW is not installed yet, run this once (it installs pyMIRAW with everything it needs, including ViennaRNA
+If miRAW is not installed yet, run this once (it installs miRAW with everything it needs, including ViennaRNA
 and the original weights):
 
 ```
-pip install pymiraw
+pip install miraw
 ```
 
 In a notebook you can type `%pip install ...` in a cell instead. Then import it:
 """)
 
 code("""
-import pymiraw
+import miraw
 
-print("pyMIRAW", pymiraw.__version__)
+print("miRAW", miraw.__version__)
 """)
 
 md("""
@@ -63,14 +63,14 @@ Run each cell with **Shift + Enter**. You only need the next three cells to get 
 
 ### 1.1 Predict a few example pairs
 
-pyMIRAW ships 24 miRNA-gene pairs from the paper's test data (12 real targets, 12 non-targets) so you can try it
-straight away. `pymiraw.predict` does everything: it finds candidate sites, scores them with the original miRAW model
+miRAW ships 24 miRNA-gene pairs from the paper's test data (12 real targets, 12 non-targets) so you can try it
+straight away. `miraw.predict` does everything: it finds candidate sites, scores them with the original miRAW model
 and gives a verdict per pair. A progress bar shows how far it is; all CPU cores are used automatically.
 """)
 
 code("""
-pairs = pymiraw.example_pairs()
-predictions = pymiraw.predict(pairs)
+pairs = miraw.example_pairs()
+predictions = miraw.predict(pairs)
 predictions
 """)
 
@@ -127,11 +127,11 @@ to show the whole round trip:
 code("""
 from pathlib import Path
 
-work = Path("pymiraw_tutorial_output")
+work = Path("miraw_tutorial_output")
 work.mkdir(exist_ok=True)
 pairs.to_csv(work / "my_pairs.tsv", sep="\\t", index=False)
 
-predictions = pymiraw.predict(work / "my_pairs.tsv")
+predictions = miraw.predict(work / "my_pairs.tsv")
 folder = predictions.save(work / "my_results")
 sorted(p.name for p in folder.iterdir())
 """)
@@ -168,14 +168,14 @@ my_pairs
 """)
 
 code("""
-table_predictions = pymiraw.predict(my_pairs)
+table_predictions = miraw.predict(my_pairs)
 table_predictions.genes[["miRNA", "GeneName", "Prediction", "IsTarget", "PosSites", "NegSites"]]
 """)
 
 md("""
 Only let-7a on geneA is called a target: its site pairs perfectly with the let-7 seed. miR-21 does not bind that
 fragment, and geneB's 3'UTR has candidate sites, but they all score below zero. A plain list of `(mirna_seq, utr)`
-tuples works too: `pymiraw.predict([(let7a, utr_a), (mir21, utr_a)])`.
+tuples works too: `miraw.predict([(let7a, utr_a), (mir21, utr_a)])`.
 
 ### 1.5 A single miRNA and 3'UTR
 
@@ -186,7 +186,7 @@ code("""
 mirna = "CAUUGCACUUGUCUCGGUCUGA"  # hsa-miR-25-3p
 utr = pairs["3UTR_transcript"][0]   # a 3'UTR (any RNA or DNA letters)
 
-result = pymiraw.predict_pair(mirna, utr)
+result = miraw.predict_pair(mirna, utr)
 print(f"prediction {result.prediction:+.3f} -> {'target' if result.is_target else 'not a target'}, "
       f"{len(result.sites)} candidate sites")
 """)
@@ -221,7 +221,7 @@ selected with `finder=` and `filters=`:
 """)
 
 code("""
-pita_ae = pymiraw.predict(pairs, finder="PITA", filters="AccessibilityEnergy;10")
+pita_ae = miraw.predict(pairs, finder="PITA", filters="AccessibilityEnergy;10")
 print(pita_ae)
 print({k: round(v, 3) for k, v in pita_ae.metrics().items() if k in ("Accuracy", "F1")})
 """)
@@ -237,37 +237,37 @@ Unknown or misspelled settings are reported as errors.
 code("""
 import yaml
 
-config = pymiraw.PredictConfig(finder="Personalized;1;9;7", filters=["AccessibilityEnergy;10"])
+config = miraw.PredictConfig(finder="Personalized;1;9;7", filters=["AccessibilityEnergy;10"])
 (work / "my_config.yaml").write_text(yaml.safe_dump(config.model_dump()))
 print((work / "my_config.yaml").read_text())
 """)
 
 code("""
-from pymiraw.config import load_config
+from miraw.config import load_config
 
-same = pymiraw.predict(pairs, config=load_config(work / "my_config.yaml"), progress=False)
+same = miraw.predict(pairs, config=load_config(work / "my_config.yaml"), progress=False)
 print(same)
 """)
 
 md("""
-The same run from a terminal (`pymiraw --help` lists every command and option; `evaluate` also writes `metrics.json`):
+The same run from a terminal (`miraw --help` lists every command and option; `evaluate` also writes `metrics.json`):
 
 ```
-pymiraw evaluate pymiraw_tutorial_output/my_pairs.tsv --config pymiraw_tutorial_output/my_config.yaml --name cli_run
-pymiraw predict my_pairs.tsv --finder PITA --filter "AccessibilityEnergy;10" --output-dir results
+miraw evaluate miraw_tutorial_output/my_pairs.tsv --config miraw_tutorial_output/my_config.yaml --name cli_run
+miraw predict my_pairs.tsv --finder PITA --filter "AccessibilityEnergy;10" --output-dir results
 ```
 
 The original miRAW `.properties` configuration files are accepted by `--config` too.
 """)
 
 md("""
-From a notebook, `!` runs a terminal command; `python -m pymiraw` is the same as `pymiraw`:
+From a notebook, `!` runs a terminal command; `python -m miraw` is the same as `miraw`:
 """)
 
 code("""
 import sys
 
-!{sys.executable} -m pymiraw evaluate {work}/my_pairs.tsv --config {work}/my_config.yaml --output-dir {work} --name cli_run 2>/dev/null
+!{sys.executable} -m miraw evaluate {work}/my_pairs.tsv --config {work}/my_config.yaml --output-dir {work} --name cli_run 2>/dev/null
 """)
 
 md("""
@@ -285,7 +285,7 @@ import time
 
 for attempt in ("first run", "second run (sites loaded from disk)"):
     t = time.time()
-    pymiraw.predict(pairs, sites_dir=work / "sites", progress=False)
+    miraw.predict(pairs, sites_dir=work / "sites", progress=False)
     print(f"{attempt}: {time.time() - t:.1f} s")
 """)
 
@@ -294,7 +294,7 @@ md("""
 
 Candidate sites come from RNA folding, so the ViennaRNA version slightly changes the results:
 
-* `backend="bindings"` (default): the ViennaRNA Python package installed with pyMIRAW (2.7). With the original weights it
+* `backend="bindings"` (default): the ViennaRNA Python package installed with miRAW (2.7). With the original weights it
   reproduces the paper's benchmark within 0.005 accuracy.
 * `backend="cli"`: the ViennaRNA command-line programs (`RNAcofold`, `RNAfold`) of any installed version, from the PATH
   or from `vienna_bin=`. With ViennaRNA **2.2.5**, the version miRAW used, the published results are reproduced exactly.
@@ -306,7 +306,7 @@ import shutil
 
 vienna_bin = None  # e.g. "/opt/conda/envs/vienna225/bin"
 if vienna_bin or shutil.which("RNAcofold"):
-    exact = pymiraw.predict(pairs.head(4), backend="cli", vienna_bin=vienna_bin, progress=False)
+    exact = miraw.predict(pairs.head(4), backend="cli", vienna_bin=vienna_bin, progress=False)
     print(exact.genes[["GeneName", "Prediction"]])
 else:
     print("No ViennaRNA command-line tools found: set vienna_bin to their folder to try the 'cli' backend.")
@@ -318,13 +318,13 @@ md("""
 ### 3.1 Training data
 
 The network scores **sites**: a miRNA sequence plus a 40-nucleotide piece of 3'UTR, labelled 1 (real binding site) or
-0. pyMIRAW ships 5,000 such sites sampled from the paper's cross-validation fold 6 (4,000 for training, 1,000 for
+0. miRAW ships 5,000 such sites sampled from the paper's cross-validation fold 6 (4,000 for training, 1,000 for
 testing). The full paper data (about 14,000 sites per fold) comes with the paper archive, see section 3.6.
 """)
 
 code("""
-train_sites = pymiraw.example_sites("train")
-test_sites = pymiraw.example_sites("test")
+train_sites = miraw.example_sites("train")
+test_sites = miraw.example_sites("test")
 print(len(train_sites), "training sites,", len(test_sites), "test sites")
 train_sites.head()
 """)
@@ -332,14 +332,14 @@ train_sites.head()
 md("""
 ### 3.2 Train a model the way the paper did
 
-`pymiraw.train` uses the paper's training regime by default (`TrainConfig.paper()`): the paper's 9-layer network,
+`miraw.train` uses the paper's training regime by default (`TrainConfig.paper()`): the paper's 9-layer network,
 Nesterov SGD with learning rate 0.005, batches of 50, XENT loss, 10 epochs in file order, keeping the epoch with the
 lowest training loss. With a test set it also reports test metrics. On 4,000 sites this takes a few seconds; a GPU is
 used when there is one.
 """)
 
 code("""
-model = pymiraw.train(train_sites, test_sites)
+model = miraw.train(train_sites, test_sites)
 print(model)
 print({k: round(v, 3) for k, v in model.meta["metrics"].items() if k in ("Accuracy", "AUC", "F1")})
 """)
@@ -349,29 +349,29 @@ md("""
 
 A model is saved as one `.pt` file holding the weights, the architecture and the site encoding it was trained with,
 so it cannot be loaded with the wrong encoding by mistake. Give the file (or the model object) to `predict` wherever
-the original weights were used, here and on the command line (`pymiraw predict ... --model my_model.pt`).
+the original weights were used, here and on the command line (`miraw predict ... --model my_model.pt`).
 """)
 
 code("""
 path = model.save(work / "my_model.pt")
 
-mine = pymiraw.predict(pairs, path, progress=False)
-original = pymiraw.predict(pairs, progress=False)  # the original miRAW weights
+mine = miraw.predict(pairs, path, progress=False)
+original = miraw.predict(pairs, progress=False)  # the original miRAW weights
 for name, p in (("my model (4,000 sites)", mine), ("original miRAW", original)):
     print(f"{name:24s} accuracy {p.metrics()['Accuracy']:.2f}")
 """)
 
 md("""
-A model trained on 4,000 sites is weaker than the paper's (trained on 14,000). `pymiraw.load_model` opens any model
+A model trained on 4,000 sites is weaker than the paper's (trained on 14,000). `miraw.load_model` opens any model
 file, including the original miRAW DL4J files (`bestModel.bin`), and scores site sequences directly:
 """)
 
 code("""
-loaded = pymiraw.load_model(path)
+loaded = miraw.load_model(path)
 site_seqs = list(test_sites.site_seq[:3])
 mirna_seq = test_sites.mirna_seq[0]
 print("my model:", loaded.score_sites(mirna_seq, site_seqs))
-print("original:", pymiraw.load_model("original").score_sites(mirna_seq, site_seqs))
+print("original:", miraw.load_model("original").score_sites(mirna_seq, site_seqs))
 """)
 
 md("""
@@ -386,14 +386,14 @@ models: the gates in `docs/PLAN.md` test those.
 code("""
 from dataclasses import asdict
 
-custom = pymiraw.TrainConfig(
+custom = miraw.TrainConfig(
     loss="nll",                      # instead of the paper's XENT
     site_orientation="natural",      # site encoded 5'->3'
     val_fraction=0.1, patience=3,    # keep the best epoch on a 10 % validation split, stop after 3 bad epochs
     max_epochs=30, shuffle=True,
     model_params={"layer_sizes": (280, 200, 100, 50, 2)},
 )
-small = pymiraw.train(train_sites, test_sites, config=custom)
+small = miraw.train(train_sites, test_sites, config=custom)
 print({k: round(v, 3) for k, v in small.meta["metrics"].items() if k in ("Accuracy", "AUC")},
       "after", small.meta["metrics"]["epochs_run"], "epochs")
 """)
@@ -405,7 +405,7 @@ Any PyTorch module that maps the encoded input (280 values: 30 miRNA + 40 site n
 be trained, saved and used for prediction. Register it under a name and refer to it in `TrainConfig(model=...)`;
 `docs/extending.md` has the details. The network below is a toy (weaker than the paper's MLP); it shows the
 mechanics. On macOS and Windows, a class defined in a notebook cell is predicted in one
-process (pyMIRAW warns you); put it in a `.py` file and import it to use all CPU cores.
+process (miRAW warns you); put it in a `.py` file and import it to use all CPU cores.
 """)
 
 code("""
@@ -413,8 +413,8 @@ import torch
 from torch import nn
 
 
-@pymiraw.register_model("tutorial-cnn")
-class SiteCNN(pymiraw.SiteClassifier):
+@miraw.register_model("tutorial-cnn")
+class SiteCNN(miraw.SiteClassifier):
     def __init__(self, channels: int = 16):
         super().__init__()
         self.channels = channels
@@ -429,9 +429,9 @@ class SiteCNN(pymiraw.SiteClassifier):
         return {"name": "tutorial-cnn", "channels": self.channels}
 
 
-cnn = pymiraw.train(train_sites, test_sites, model="tutorial-cnn", model_params={"channels": 32}, max_epochs=20)
+cnn = miraw.train(train_sites, test_sites, model="tutorial-cnn", model_params={"channels": 32}, max_epochs=20)
 print({k: round(v, 3) for k, v in cnn.meta["metrics"].items() if k in ("Accuracy", "AUC")})
-cnn_predictions = pymiraw.predict(pairs, cnn, progress=False)  # an in-memory model works too
+cnn_predictions = miraw.predict(pairs, cnn, progress=False)  # an in-memory model works too
 print(cnn_predictions)
 """)
 
@@ -440,20 +440,20 @@ md("""
 
 The paper archive (`PLOSComb.7z`, 1 GB, from [bitbucket.org/bipous/miraw_data](https://bitbucket.org/bipous/miraw_data))
 holds the 10 cross-validation folds and the 10 balanced test sets. Unpack it once with
-`pymiraw data unpack-archive PLOSComb.7z` (it needs `pip install "pymiraw[data]"`). Then:
+`miraw data unpack-archive PLOSComb.7z` (it needs `pip install "miraw[data]"`). Then:
 
-* `pymiraw.cross_validate(folds_dir)` trains one model per fold in the paper's regime (15-20 s per fold, GPU or CPU);
-* `pymiraw parity <balanced10 folder>` reruns the paper's 10 x 10 benchmark (Gate 1 in the README).
+* `miraw.cross_validate(folds_dir)` trains one model per fold in the paper's regime (15-20 s per fold, GPU or CPU);
+* `miraw parity <balanced10 folder>` reruns the paper's 10 x 10 benchmark (Gate 1 in the README).
 
 The next cell runs only when the data is there.
 """)
 
 code("""
-from pymiraw.storage import ORIGINAL_DIR
+from miraw.storage import ORIGINAL_DIR
 
 folds_dir = ORIGINAL_DIR / "Data/CrossVal/RelaxedPW60_14K_35K/binary"
 if folds_dir.is_dir():
-    cv = pymiraw.cross_validate(folds_dir, folds=[6], out_dir=work / "cv")  # one fold here; folds 0-8 in the paper
+    cv = miraw.cross_validate(folds_dir, folds=[6], out_dir=work / "cv")  # one fold here; folds 0-8 in the paper
     print(cv[["fold", "seed", "Accuracy", "AUC"]])
 else:
     print(f"paper data not found in {ORIGINAL_DIR}: unpack PLOSComb.7z to run cross-validation")
@@ -462,7 +462,7 @@ else:
 md("""
 ## Citation
 
-pyMIRAW reimplements the method of the miRAW paper. If you use it, please cite:
+This package reimplements the method of the miRAW paper. If you use it, please cite:
 
 > Pla A, Zhong X, Rayner S (2018). miRAW: A deep learning-based approach to predict microRNA targets by analyzing whole
 > microRNA transcripts. *PLoS Computational Biology* 14(7): e1006185.

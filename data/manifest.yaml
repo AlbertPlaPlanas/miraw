@@ -1,4 +1,4 @@
-# Heavy artefacts live on S3 (never in git). `pymiraw data pull <key>` downloads and verifies them.
+# Heavy artefacts live on S3 (never in git). `miraw data pull <key>` downloads and verifies them.
 # Credentials: standard AWS chain; on the dev box run via scripts/with-s3-creds.sh.
 root: s3://digitalrnd-drf-projects-raw-ireland/spatial_omics/dev/pyMIRAW
 files:
@@ -16,4 +16,4 @@ files:
     note: >-
       Paper data archive (bitbucket.org/bipous/miraw_data): balanced test sets, CV folds, training
       sites, configs and Results/. Unpack Data/TestData/balanced10 and Data/CrossVal/RelaxedPW60_14K_35K/binary
-      to run 'pymiraw parity' and 'pymiraw train'.
+      to run 'miraw parity' and 'miraw train'.

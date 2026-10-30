@@ -13,5 +13,5 @@ __pycache__/
 .pytest_cache/
 runs/
 data/original/
-notebooks/pymiraw_tutorial_output/
+notebooks/miraw_tutorial_output/
 .hypothesis/

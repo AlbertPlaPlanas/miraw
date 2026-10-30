@@ -1,6 +1,6 @@
 """Execute a notebook in its own folder and tidy the stored outputs (progress bars: keep the final state).
 
-Usage: python scripts/run_notebook.py notebooks/pymiraw_tutorial.ipynb     (needs nbclient and ipykernel: pymiraw[dev])
+Usage: python scripts/run_notebook.py notebooks/miraw_tutorial.ipynb     (needs nbclient and ipykernel: miraw[dev])
 """
 
 import sys

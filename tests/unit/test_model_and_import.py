@@ -7,10 +7,10 @@ import numpy as np
 import pytest
 import torch
 
-from pymiraw.models.base import SiteClassifier, build_model, register_model, registered_models
-from pymiraw.models.dl4j_import import load_dl4j, read_nd4j_array
-from pymiraw.models.mlp import PAPER_LAYER_SIZES, MirawMLP
-from pymiraw.training.losses import get_loss, nll, xent
+from miraw.models.base import SiteClassifier, build_model, register_model, registered_models
+from miraw.models.dl4j_import import load_dl4j, read_nd4j_array
+from miraw.models.mlp import PAPER_LAYER_SIZES, MirawMLP
+from miraw.training.losses import get_loss, nll, xent
 
 
 def _utf(s):
@@ -121,8 +121,8 @@ def test_dropout_param_only_when_positive():
 
 
 def test_artifact_roundtrip_preserves_encoder_and_weights(tmp_path):
-    from pymiraw.encoding.onehot import OneHotFlat
-    from pymiraw.models.artifact import load_artifact, save_artifact
+    from miraw.encoding.onehot import OneHotFlat
+    from miraw.models.artifact import load_artifact, save_artifact
 
     m, enc = MirawMLP((20, 8, 2)), OneHotFlat(2, 3, "natural")
     save_artifact(tmp_path / "a.pt", m, enc, {"x": 1})

@@ -1,4 +1,4 @@
-# pyMIRAW — Python reimplementation plan
+# miRAW — Python reimplementation plan
 
 Port of miRAW (Pla, Zhong & Rayner, *PLoS Comput Biol* 2018, [PMC6067737](https://pmc.ncbi.nlm.nih.gov/articles/PMC6067737/);
 Java/DL4J code at [bipous/miraw_-dl4mirnatargeting_code](https://bitbucket.org/bipous/miraw_-dl4mirnatargeting_code/src/master/))
@@ -8,7 +8,7 @@ to a maintainable Python package on PyTorch.
 encoder/model interfaces are designed so CNNs, RNNs or Transformers can be added later as plug-ins
 without touching the pipeline.
 
-**Non-negotiable acceptance rule:** pyMIRAW must be *at least as good* as the original on the paper's
+**Non-negotiable acceptance rule:** miRAW must be *at least as good* as the original on the paper's
 own benchmark (see [§6 Acceptance gates](#6-acceptance-gates-at-least-as-good)).
 
 ---
@@ -73,7 +73,7 @@ Evidence comes from the code, the saved models and the CV logs in `Results/Resul
 3. **Paper training regime, as it actually ran** (and one more finding, 2026-10-27: the training files
    are strictly alternating 1,0,1,0,... and DL4J read them **in file order, never shuffled**, so every
    batch of 50 was balanced and identical each epoch. Shuffling instead costs about 0.02 accuracy and
-   0.012 AUC; `pymiraw train --no-shuffle --val-fraction 0` reproduces the paper regime):
+   0.012 AUC; `miraw train --no-shuffle --val-fraction 0` reproduces the paper regime):
    * XENT, Nesterov 0.9, LR 0.005, batch 50, **max 10 epochs**;
    * no validation-based early stopping;
    * the "best" model is the epoch with the lowest *training* score (the last minibatch), at
@@ -91,7 +91,7 @@ Evidence comes from the code, the saved models and the CV logs in `Results/Resul
      nt 1–10 variant is a commented-out older setting.
    * Prototype evidence: nt 2–10 reproduces 99.4 % of recorded sites, nt 1–10 only 65.5 %.
    * Likewise `Personalized;0;9;7` covers nt 1–9 and `Personalized;1;9;7` covers nt 2–10.
-   * pyMIRAW keeps the paper names (`miraw-6-1:10`, …) but documents the real windows. A true
+   * miRAW keeps the paper names (`miraw-6-1:10`, …) but documents the real windows. A true
      nt 1–10 variant can be added later as a separate, explicitly named config.
 5. **ΔG_open threshold.** The code semantics are kept: remove a site if ΔG_open > +10, as in
    `AccessibilityEnergy;10`. Gate 1's AE configs confirm or refute this empirically.
@@ -143,7 +143,7 @@ Evidence comes from the code, the saved models and the CV logs in `Results/Resul
 ## 2. Target architecture
 
 ```
-pyMiraw/
+miraw/
 ├── environment.yml              # main dev/run env (conda-forge + bioconda, ViennaRNA 2.7.2, PyTorch CUDA)
 ├── environment-reference.yml    # parity env: ViennaRNA 2.2.5 CLI + OpenJDK 8 to run the original miRAW.jar
 ├── conda-lock.yml               # fully pinned lock for linux-64 (generated)
@@ -156,8 +156,8 @@ pyMiraw/
 │   └── examples/
 ├── data/manifest.yaml           # every heavy artefact: S3 URI + sha256 + size + provenance
 ├── scripts/with-s3-creds.sh     # exports creds from the gitignored .secrets.md, then exec "$@"
-├── src/pymiraw/
-│   ├── cli.py                   # Typer app: `pymiraw <command>`
+├── src/miraw/
+│   ├── cli.py                   # Typer app: `miraw <command>`
 │   ├── config.py                # pydantic v2 models; YAML loader + legacy .properties loader
 │   ├── storage.py               # fsspec/s3fs: pull/push/verify against manifest, local cache
 │   ├── io/                      # fasta, unified TSV/parquet, legacy CSV writers (byte-compatible outputs)
@@ -205,7 +205,7 @@ pyMiraw/
   stopping, seeding, GPU/CPU switching and loggers for free, and is where future architectures will
   benefit most.
 * **Folding is the real cost, not the network.** The original spawns one `RNAcofold` process per
-  1-nt window. pyMIRAW uses the in-process ViennaRNA bindings, a process pool (16 cores here) and an
+  1-nt window. miRAW uses the in-process ViennaRNA bindings, a process pool (16 cores here) and an
   on-disk cache. Expect orders-of-magnitude faster site finding.
 * **Plug-in seams for future architectures:** `Encoder` (declares output shape) + `SiteClassifier`
   (logits in, registered by name) + YAML `model: {name: mlp, ...}`. Adding a CNN means one module,
@@ -216,15 +216,15 @@ pyMiraw/
   metadata). Each model artefact stores its encoder and mode, so the wrong one can never be used.
 * **Original-weights flag (implemented).** Any prediction command can be run with the original
   miRAW paper weights, so results are always comparable with the published ones:
-  * CLI: `pymiraw predict|evaluate <input> --original-weights`; YAML: `original_weights: true`
+  * CLI: `miraw predict|evaluate <input> --original-weights`; YAML: `original_weights: true`
     or `model: original`. It overrides any other `model` value, and **it is also the default
-    when no model is given**, so pyMIRAW can never silently run with an untested model.
+    when no model is given**, so miRAW can never silently run with an untested model.
   * The weights are `bestModel.bin` of the paper (a DL4J file, MIT). Since 2026-10-28 (owner request: a
-    self-contained package) they are **bundled** as `src/pymiraw/resources/miraw_original.pt` (1.75 MB; the
+    self-contained package) they are **bundled** as `src/miraw/resources/miraw_original.pt` (1.75 MB; the
     only file exempt from the 1 MB hook), a bit-exact conversion made by `scripts/bundle_original_weights.py`
-    and pinned by sha256 in `pymiraw.resources`. Tests check it against the DL4J file whenever
+    and pinned by sha256 in `miraw.resources`. Tests check it against the DL4J file whenever
     `data/original` exists. Nothing is downloaded; the S3 copy stays as the archive of record.
-  * `PYMIRAW_ORIGINAL_WEIGHTS=/path/to/file` (`.pt` or DL4J `.bin`) overrides the bundled copy.
+  * `MIRAW_ORIGINAL_WEIGHTS=/path/to/file` (`.pt` or DL4J `.bin`) overrides the bundled copy.
   * The original weights imply the `old-default` site orientation (the importer sets it), and
     the run summary prints `weights: original miRAW` so it is visible in every log.
   * Tests that need the paper archive (`data/original`) are marked `data` and skip cleanly without it.
@@ -235,7 +235,7 @@ pyMiraw/
   * `natural` encodes the site 5'→3', as written.
   * The value is saved in every model artefact and checked at load time. Running a model with the
     wrong orientation is a hard error, not a silent accuracy loss.
-* **Configs:** YAML validated by pydantic. `pymiraw ... --legacy-properties file.properties` also
+* **Configs:** YAML validated by pydantic. `miraw ... --legacy-properties file.properties` also
   accepts the original configs unchanged.
 * **Outputs:** parquet internally. Legacy TSVs (`targetPredictionOutput.csv`, `positiveTargetSites.csv`)
   are written byte-compatible so old analysis scripts keep working.
@@ -249,10 +249,10 @@ pyMiraw/
 
 The `defaults` channel is not reachable from this machine, so both env files use `nodefaults`.
 
-`environment.yml` (main env, `pymiraw`):
+`environment.yml` (main env, `miraw`):
 
 ```yaml
-name: pymiraw
+name: miraw
 channels: [conda-forge, bioconda, nodefaults]
 dependencies:
   - python=3.12
@@ -271,15 +271,15 @@ dependencies:
       - -e .                 # the package itself, editable
 ```
 
-`environment-reference.yml` (parity oracle env, `pymiraw-ref`): `viennarna=2.2.5`, `openjdk=8`,
-`python=3.12`, `pandas`. It is used only to run the original `miRAW.jar` and to give pyMIRAW's CLI
+`environment-reference.yml` (parity oracle env, `miraw-ref`): `viennarna=2.2.5`, `openjdk=8`,
+`python=3.12`, `pandas`. It is used only to run the original `miRAW.jar` and to give miRAW's CLI
 folding backend the exact ViennaRNA version.
 
 Setup (also wrapped as `make env` / `make env-ref`):
 
 ```bash
-conda env create -f environment.yml            # or: conda-lock install -n pymiraw conda-lock.yml
-conda activate pymiraw
+conda env create -f environment.yml            # or: conda-lock install -n miraw conda-lock.yml
+conda activate miraw
 pre-commit install
 make test                                      # unit + fast functional
 # parity oracle (only needed for Gate 1 / regenerating golden files)
@@ -310,8 +310,8 @@ pyMIRAW/
 ```
 
 * `data/manifest.yaml` in git lists every object: URI, sha256, size, provenance and licence note.
-  `pymiraw data pull <key>` downloads into `~/.cache/pymiraw`, verifies the checksum and is
-  idempotent. `pymiraw data push` uploads and updates the manifest.
+  `miraw data pull <key>` downloads into `~/.cache/miraw`, verifies the checksum and is
+  idempotent. `miraw data push` uploads and updates the manifest.
 * Only fixtures under 1 MB go in git (`tests/fixtures/`).
 * \*TarBase v7 needs registration with DIANA, so keep it in the private bucket only and never in git.
 * **Credentials:** never in code, config or git. `.secrets.md` is gitignored (done during planning).
@@ -340,10 +340,10 @@ pyMIRAW/
 | **Unit** (`tests/unit`, < 30 s, no network, ViennaRNA stubbed where possible) | every commit, CI | Encoding: bit-exact against sampled rows of `allTrainingSitesBinarized.txt`, including the reversed site and `L` padding. Structure utils: binding start, `getPairAt`, duplex check, WC/wobble tables. `alignAndExtend` edge cases (start < 0, end > len). Overlap resolution with a fake folding backend. Each finder on the ported Java NGTest cases. Filters with a stubbed ΔG. Gene aggregation (max, removed sites → 0, counts, no-site pairs). Metrics against scikit-learn. Config and legacy `.properties` parsing. Model registry plus a dummy plug-in model. DL4J import shapes and layout. S3 storage against `moto` |
 | **Property** (hypothesis) | CI | Encoded length is invariant. Aligned sites always have length L. Kept sites are never closer than `winStep`. Scores stay in [−1, 1]. Encoder output is deterministic |
 | **Functional** (`tests/functional`, < 5 min) | CI | (a) The imported `bestModel.bin` / `goodModel.bin` reproduces recorded **site-level** predictions from `positiveTargetSites.csv` to ≤ 1e-5, with no folding needed. (b) End-to-end on `shortUnifiedFile.csv` + `goodModel` → `targetPredictionOutput.csv` / `targetSites.csv` (exact with the 2.2.5 CLI backend, tolerance-checked with 2.7.2). (c) Training smoke test: tiny data, 2 epochs, loss decreases, checkpoint round-trip gives identical outputs. (d) CLI smoke tests via Typer's `CliRunner` |
-| **Reference** (`-m reference`) | on demand, needs `pymiraw-ref` | Runs the original `miRAW.jar` on sampled pairs and diffs candidate sites, ΔG and predictions against pyMIRAW |
+| **Reference** (`-m reference`) | on demand, needs `miraw-ref` | Runs the original `miRAW.jar` on sampled pairs and diffs candidate sites, ΔG and predictions against this port |
 | **Acceptance** (`make parity`, hours, 16 CPUs) | before each release / model promotion | Full Gate 1 / Gate 2 benchmarks below. Writes `docs/parity.md` and `runs/…` on S3 |
 
-Coverage target: ≥ 90 % on `src/pymiraw` excluding CLI glue.
+Coverage target: ≥ 90 % on `src/miraw` excluding CLI glue.
 
 ### CI/CD: zero cost, zero infrastructure
 
@@ -373,7 +373,7 @@ runners to manage.
 * **pre-commit** (ruff, mypy, gitleaks) runs the same checks locally before each commit, so CI is a
   safety net rather than the main gate.
 * **No CD service.** A "release" is a git tag. `make release` builds the wheel, and when a model is
-  promoted it is pushed to `s3://…/models/` by `pymiraw data push`. GitHub Releases (free) can hold
+  promoted it is pushed to `s3://…/models/` by `miraw data push`. GitHub Releases (free) can hold
   the changelog. No package registry or Docker registry is needed.
 
 ---
@@ -403,12 +403,12 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
   * With the 2.2.5 CLI backend: TP/FP/TN/FN equal GlobalSummary per set and per config. Fewer than
     0.5 % of pairs may differ, each explained.
   * This gate proves the port is correct.
-* **Gate 2: retrained model (pyMIRAW training stack): non-inferiority.** Rule agreed 2026-10-27, replacing
+* **Gate 2: retrained model (miRAW training stack): non-inferiority.** Rule agreed 2026-10-27, replacing
   the earlier "mean at least as high as the paper". Folding is held fixed so the gate measures only the
   network. A retrained model passes if, for every row below, the **one-sided 99 % lower confidence bound
   of the paired difference (ours - paper) is above -margin**, with margins **0.02 for
   accuracy and F1** (0.01 until 2026-10-28; widened post hoc by the owner after the paired results, to one value for
-  all non-AUC gate criteria, the same as Gate 1) and 0.005 for AUC (`pymiraw.evaluation.noninferiority`: `CONFIDENCE`, `MARGINS`, `METHOD`).
+  all non-AUC gate criteria, the same as Gate 1) and 0.005 for AUC (`miraw.evaluation.noninferiority`: `CONFIDENCE`, `MARGINS`, `METHOD`).
   Bound (changed 2026-10-28, owner decision, **after** the paired results were seen): exact Wilcoxon signed-rank
   bound of the Hodges-Lehmann estimate, so that large wins count by rank and do not widen the bound. Until then
   it was the t-based bound of the mean (`method="t"`), under which large wins inflate the SD.
@@ -435,7 +435,7 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
   * Limits: the cells of the gene-level check share pairs across configs, so its bounds are optimistic;
     passes with slack below 0.001 are flagged as fragile. The margins were chosen after seeing the data.
   * Passing does **not** promote a model automatically: the original weights (`--original-weights`,
-    `model: original`) remain the default unless the owner decides otherwise, so pyMIRAW is never worse than miRAW.
+    `model: original`) remain the default unless the owner decides otherwise, so miRAW is never worse than the original.
 * **Gate 3: full unbalanced test set** (`Evaluate_14K_FULL`, 17,043 pairs): for the default model and configuration
   (miRAW-6-1:10, no filter), AUC ≥ the paper's AUC on the same pairs **minus 0.005**. The tolerance (2026-10-29, owner
   decision) makes Gate 3 consistent with the other gates, which allow for the ViennaRNA version: Gate 1's ±0.02 and the
@@ -453,7 +453,7 @@ Site-level CV (paper, XENT): accuracy 0.92, AUC 0.96.
 
 | Phase | Deliverables | Exit criterion |
 |---|---|---|
-| **0. Bootstrap** | Repo skeleton, `pyproject`, both env files + lock, Makefile, pre-commit, CI. Original archive, binaries and test data mirrored to S3 with `manifest.yaml`. Released data (unified file, splits, training sites, CV folds, test sets, results) imported to parquet under `processed/v1/`. `pymiraw-ref` env runs `miRAW.jar` on `shortUnifiedFile.csv` and stores golden outputs in `s3://…/reference/` | `make test` green in CI. `pymiraw data verify` passes. The Java oracle reproduces `TestData/ExperimentResults/genePredict` |
+| **0. Bootstrap** | Repo skeleton, `pyproject`, both env files + lock, Makefile, pre-commit, CI. Original archive, binaries and test data mirrored to S3 with `manifest.yaml`. Released data (unified file, splits, training sites, CV folds, test sets, results) imported to parquet under `processed/v1/`. `miraw-ref` env runs `miRAW.jar` on `shortUnifiedFile.csv` and stores golden outputs in `s3://…/reference/` | `make test` green in CI. `miraw data verify` passes. The Java oracle reproduces `TestData/ExperimentResults/genePredict` |
 | **1. Primitives** | `folding/` (both backends + cache), `sites/structure.py`, `encoding/onehot.py`, `models/mlp.py`, `models/dl4j_import.py`, `model import-dl4j` CLI | **Gate 0** |
 | **2. Candidate sites & filters** | All four finders, `alignAndExtend`, overlap resolution, accessibility/zone filters, `sites find` CLI, parallel execution | Ported NGTests pass. Candidate sites (positions, ΔG, transcript) match Java oracle on ≥ 200 sampled pairs per finder (2.2.5) |
 | **3. Gene prediction & evaluation** | `prediction/`, `evaluation/`, `predict`, `evaluate`, `report`, `parity` CLI, legacy output writers, YAML twins of all paper configs | **Gate 1** and **Gate 3** (paper model) |

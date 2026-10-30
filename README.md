@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="docs/logo.png" alt="pyMIRAW logo" width="480">
+  <img src="docs/logo.png" alt="miRAW logo" width="480">
 </p>
 
-# pyMIRAW
+# miRAW
 
-[![CI](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/ci.yml)
-[![Secret scan](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/secrets.yml/badge.svg)](https://github.com/AlbertPlaPlanas/pyMiraw/actions/workflows/secrets.yml)
-[![PyPI](https://img.shields.io/pypi/v/pymiraw)](https://pypi.org/project/pymiraw/)
+[![CI](https://github.com/AlbertPlaPlanas/miraw/actions/workflows/ci.yml/badge.svg)](https://github.com/AlbertPlaPlanas/miraw/actions/workflows/ci.yml)
+[![Secret scan](https://github.com/AlbertPlaPlanas/miraw/actions/workflows/secrets.yml/badge.svg)](https://github.com/AlbertPlaPlanas/miraw/actions/workflows/secrets.yml)
+[![PyPI](https://img.shields.io/pypi/v/miraw)](https://pypi.org/project/miraw/)
 [![Python](https://img.shields.io/badge/python-%E2%89%A53.11-blue)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -14,23 +14,23 @@
 [![Status](https://img.shields.io/badge/status-work%20in%20progress-yellow)](#3-status)
 
 Python/PyTorch reimplementation of **miRAW** ([Pla, Zhong & Rayner, PLoS Comput Biol 2018](https://doi.org/10.1371/journal.pcbi.1006185)),
-a deep-learning miRNA-target predictor. The original is Java/DL4J
-([bitbucket.org/bipous](https://bitbucket.org/bipous/miraw_-dl4mirnatargeting_code)). pyMIRAW reproduces its published
-results, ships with the original weights and runs from Python or the command line. To start, see
+a deep-learning miRNA-target predictor. The original miRAW is Java/DL4J
+([bitbucket.org/bipous](https://bitbucket.org/bipous/miraw_-dl4mirnatargeting_code)). This version reproduces its
+published results, ships with the original weights and runs from Python or the command line. To start, see
 [Installation](#installation) and [Quick start](#quick-start).
 
 > **Work in progress.** Prediction and training are implemented and tested; see [3. Status](#3-status).
-> If you use pyMIRAW, please **cite the original miRAW paper** ([Citation](#citation)).
+> If you use miRAW, please **cite the original miRAW paper** ([Citation](#citation)).
 
 ## Contents
 
-1. [How pyMIRAW compares to the original miRAW](#1-how-pymiraw-compares-to-the-original-miraw)
+1. [How miRAW compares to the original miRAW](#1-how-miraw-compares-to-the-original-miraw)
    * [How miRAW predicts targets](#how-miraw-predicts-targets)
    * [Results](#results)
    * [Why the ViennaRNA version matters](#why-the-viennarna-version-matters)
    * [Why retraining does not give the same weights](#why-retraining-does-not-give-the-same-weights)
    * [What is the same and what differs](#what-is-the-same-and-what-differs)
-2. [How to use pyMIRAW](#2-how-to-use-pymiraw)
+2. [How to use miRAW](#2-how-to-use-miraw)
    * [Installation](#installation)
    * [Quick start](#quick-start)
    * [Tutorial notebook](#tutorial-notebook)
@@ -47,11 +47,11 @@ results, ships with the original weights and runs from Python or the command lin
 
 ---
 
-## 1. How pyMIRAW compares to the original miRAW
+## 1. How miRAW compares to the original miRAW
 
 ### How miRAW predicts targets
 
-pyMIRAW implements the same pipeline as miRAW. The network sees the whole mature miRNA and a 40-nt candidate site, not
+It runs the same pipeline as the original miRAW. The network sees the whole mature miRNA and a 40-nt candidate site, not
 only the seed:
 
 ```mermaid
@@ -67,7 +67,7 @@ The site finders (miRAW, Personalized, PITA, TargetScan) differ only in the seed
 
 ### Results
 
-pyMIRAW is checked against the paper by acceptance gates (rules in [docs/PLAN.md](docs/PLAN.md), section 6; result
+miRAW is checked against the paper by acceptance gates (rules in [docs/PLAN.md](docs/PLAN.md), section 6; result
 files in [docs/results/](docs/results/)).
 
 * **With the original weights (bundled, the default): identical results.** With ViennaRNA 2.2.5, the
@@ -81,19 +81,19 @@ files in [docs/results/](docs/results/)).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/gate1_parity-dark.svg">
-  <img alt="Dot plot: for each of the 10 configurations, the difference between pyMIRAW and the paper in mean accuracy and F1 is within ±0.005, well inside the ±0.02 tolerance band." src="docs/figures/gate1_parity-light.svg">
+  <img alt="Dot plot: for each of the 10 configurations, the difference between miRAW and the paper in mean accuracy and F1 is within ±0.005, well inside the ±0.02 tolerance band." src="docs/figures/gate1_parity-light.svg">
 </picture>
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/gate2_folds-dark.svg">
-  <img alt="Two dot plots over the 9 cross-validation folds: site-level and gene-level accuracy of pyMIRAW's retrained model and of the paper's own model for each fold; both scatter over the same range, around the published value." src="docs/figures/gate2_folds-light.svg">
+  <img alt="Two dot plots over the 9 cross-validation folds: site-level and gene-level accuracy of miRAW's retrained model and of the paper's own model for each fold; both scatter over the same range, around the published value." src="docs/figures/gate2_folds-light.svg">
 </picture>
 
 The figures are drawn from the result files by `scripts/make_readme_figures.py`.
 
 ### Why the ViennaRNA version matters
 
-The original miRAW ran the ViennaRNA 2.2 command-line tools; pyMIRAW defaults to the faster ViennaRNA 2.7.2 Python
+The original miRAW ran the ViennaRNA 2.2 command-line tools; this version defaults to the faster ViennaRNA 2.7.2 Python
 bindings. ViennaRNA's energy parameters changed between these versions, so a few candidate sites whose binding energy is
 close to the cut-off are found (or not) differently, which changes the gene call for very few pairs. The network itself
 is unaffected. To reproduce the paper exactly, use ViennaRNA 2.2.5 (see
@@ -106,9 +106,9 @@ initialisation, 10 epochs, training file order. The remaining differences are pl
 
 1. **Random initialisation.** DL4J/ND4J and PyTorch use different random number generators, and the paper's seeds are not
    recorded, so the networks start from different weights and converge to different, equally good, minima.
-2. **Numerical backend.** The original was trained with DL4J on ND4J (Java, CPU BLAS); pyMIRAW trains with PyTorch, here on a
+2. **Numerical backend.** The original was trained with DL4J on ND4J (Java, CPU BLAS); miRAW trains with PyTorch, here on a
    GPU (cuBLAS). Different float32 summation orders give differences of about 1e-7 per step, which SGD amplifies over the
-   2,800 updates of training (280 per epoch) into different final weights. On the same machine and software, pyMIRAW's
+   2,800 updates of training (280 per epoch) into different final weights. On the same machine and software, miRAW's
    own retraining is reproducible bit for bit (checked by `scripts/verify_gates.py`).
 3. **Framework details.** Small implementation differences can select a different "best" epoch, for example how the
    training loss is measured (DL4J scores the network after the epoch, Lightning averages the mini-batch losses during it).
@@ -118,7 +118,7 @@ initialisation, 10 epochs, training file order. The remaining differences are pl
 
 ### What is the same and what differs
 
-| | original miRAW | pyMIRAW |
+| | original miRAW (Java) | miRAW (Python) |
 |---|---|---|
 | Installation | Java 8, `miRAW.jar` and the ViennaRNA command-line tools | `pip install`; ViennaRNA and the original weights included |
 | Network | DL4J MLP 280 → 400-350-300-150-100-100-50-50 → 2 | same architecture in PyTorch, with the original weights (a bit-exact conversion); DL4J `.bin` checkpoints load directly |
@@ -131,65 +131,65 @@ initialisation, 10 epochs, training file order. The remaining differences are pl
 
 ---
 
-## 2. How to use pyMIRAW
+## 2. How to use miRAW
 
 ### Installation
 
 ```bash
-pip install pymiraw
-pymiraw --help                                  # check: lists the commands
+pip install miraw
+miraw --help                                  # check: lists the commands
 ```
 
 This needs Python 3.11 or later (Linux, macOS or Windows) and installs everything needed to predict and to train:
 PyTorch, ViennaRNA 2.7 and the original miRAW weights. Nothing else is downloaded later. No GPU is needed; see
 [Running on CPU or GPU](#running-on-cpu-or-gpu) for a smaller CPU-only install and for training on a GPU.
-Optional extras: `pip install "pymiraw[notebook]"` (JupyterLab and matplotlib, for the tutorial) and
-`pip install "pymiraw[data]"` (tools to unpack the paper's data archive, for
+Optional extras: `pip install "miraw[notebook]"` (JupyterLab and matplotlib, for the tutorial) and
+`pip install "miraw[data]"` (tools to unpack the paper's data archive, for
 [reproducing the paper](#reproducing-the-papers-results)). The development version, from GitHub:
-`pip install "pymiraw @ git+https://github.com/AlbertPlaPlanas/pyMiraw.git"`.
+`pip install "miraw @ git+https://github.com/AlbertPlaPlanas/miraw.git"`.
 
 ### Quick start
 
 **Python.** One function call; the original miRAW weights are the default model:
 
 ```python
-import pymiraw
+import miraw
 
-preds = pymiraw.predict(pymiraw.example_pairs())   # or a file name, a DataFrame, or [(mirna_seq, utr_seq), ...]
+preds = miraw.predict(miraw.example_pairs())   # or a file name, a DataFrame, or [(mirna_seq, utr_seq), ...]
 preds.genes                                         # one row per pair: Prediction, IsTarget, PosSites, ...
 preds.sites                                         # every candidate site and its score
 preds.metrics()                                     # the inputs are labelled here: accuracy 0.79, F1 0.81
 preds.save("my_results")                            # the original miRAW output files
 
-pair = pymiraw.example_pairs().iloc[0]
-r = pymiraw.predict_pair(pair.Mature_mirna_transcript, pair["3UTR_transcript"])   # one miRNA against one 3'UTR
+pair = miraw.example_pairs().iloc[0]
+r = miraw.predict_pair(pair.Mature_mirna_transcript, pair["3UTR_transcript"])   # one miRNA against one 3'UTR
 r.prediction, r.is_target                           # (0.9989..., True)
 ```
 
-**In a Python script on macOS or Windows**, put the code under `if __name__ == "__main__":`. pyMIRAW predicts in
+**In a Python script on macOS or Windows**, put the code under `if __name__ == "__main__":`. miRAW predicts in
 several processes, and there these start by re-running the script (Python's rule for parallel processes; Linux,
 notebooks and `workers=1` do not need it):
 
 ```python
-import pymiraw
+import miraw
 
 if __name__ == "__main__":
-    pymiraw.predict("pairs.tsv").save("my_results")
+    miraw.predict("pairs.tsv").save("my_results")
 ```
 
 **Command line.** The same, on a file:
 
 ```bash
-python -c "import pymiraw; pymiraw.example_pairs().to_csv('pairs.tsv', sep='\t', index=False)"   # an example input file
-pymiraw evaluate pairs.tsv --name first_run      # predicts, and compares with the labels -> runs/first_run/
-pymiraw predict  pairs.tsv --name no_labels      # predicts only
+python -c "import miraw; miraw.example_pairs().to_csv('pairs.tsv', sep='\t', index=False)"   # an example input file
+miraw evaluate pairs.tsv --name first_run      # predicts, and compares with the labels -> runs/first_run/
+miraw predict  pairs.tsv --name no_labels      # predicts only
 ```
 
-`pymiraw <command> --help` lists every option; `python -m pymiraw` is the same command.
+`miraw <command> --help` lists every option; `python -m miraw` is the same command.
 
 ### Tutorial notebook
 
-[notebooks/pymiraw_tutorial.ipynb](notebooks/pymiraw_tutorial.ipynb) shows most of this section with runnable examples
+[notebooks/miraw_tutorial.ipynb](notebooks/miraw_tutorial.ipynb) shows most of this section with runnable examples
 and their outputs. It uses only the bundled data and runs in about 3 minutes:
 
 1. quick start: predict the example pairs, read the scores, use your own file, a pandas DataFrame or a single pair, save the results;
@@ -200,14 +200,14 @@ and their outputs. It uses only the bundled data and runs in about 3 minutes:
 To run it:
 
 ```bash
-pip install "pymiraw[notebook]"
-curl -LO https://raw.githubusercontent.com/AlbertPlaPlanas/pyMiraw/main/notebooks/pymiraw_tutorial.ipynb
-jupyter lab pymiraw_tutorial.ipynb
+pip install "miraw[notebook]"
+curl -LO https://raw.githubusercontent.com/AlbertPlaPlanas/miraw/main/notebooks/miraw_tutorial.ipynb
+jupyter lab miraw_tutorial.ipynb
 ```
 
 ### Input: your miRNA-gene pairs
 
-`pymiraw.predict` accepts three forms:
+`miraw.predict` accepts three forms:
 
 * **A file**: the miRAW *unified file*, a tab-separated file with one pair per line (the command line takes only this form).
 * **A pandas DataFrame** with the same columns, or just `mirna_seq` and `utr` (optional: `miRNA`, `gene_name`,
@@ -224,14 +224,14 @@ jupyter lab pymiraw_tutorial.ipynb
 
 ```python
 import pandas as pd
-import pymiraw
+import miraw
 
 pairs = pd.DataFrame({
     "miRNA": ["hsa-let-7a-5p", "hsa-miR-21-5p"],
     "mirna_seq": ["UGAGGUAGUAGGUUGUAUAGUU", "UAGCUUAUCAGACUGAUGUUGA"],
     "utr": ["UAGCUGAGCGGCGAACCACUAGAAAAGGUUAACUAUACAACCUACUACCUCACAGACCCCGGAGCCCAGCCGUCACGAUUGU"] * 2,
 })
-pymiraw.predict(pairs).genes      # let-7a: target (the 3'UTR has a let-7 site); miR-21: not a target
+miraw.predict(pairs).genes      # let-7a: target (the 3'UTR has a let-7 site); miR-21: not a target
 ```
 
 ### Output and scores
@@ -239,7 +239,7 @@ pymiraw.predict(pairs).genes      # let-7a: target (the 3'UTR has a let-7 site);
 `preds.genes` (saved as `targetPredictionOutput.csv`) has one row per pair; `preds.sites` (saved as `targetSites.csv`)
 has one row per candidate site. `preds.save(folder)` and the command line (into `runs/<name>/`) also write `config.yaml`
 (the settings used). `metrics.json` (TP/FP/TN/FN, accuracy, precision, recall, specificity, F1) is written by
-`pymiraw evaluate` and by `preds.save` when the input is labelled.
+`miraw evaluate` and by `preds.save` when the input is labelled.
 
 **Scores range from -1 to +1.** A site's score is p(target) - p(no target) from the network's two outputs, so a score
 above 0 means p(target) > 0.5. A pair's `Prediction` is the highest score among its sites, and **the pair is predicted as
@@ -258,19 +258,19 @@ command-line options are next to them:
 | `model=` | `--model` | `original` (default), a `.pt` file, a DL4J `.bin` file, or (Python) a `Model` object |
 | `workers=` | `--workers` | parallel processes; default one per CPU core |
 | `sites_dir=` | `--sites-dir` | folder that saves the candidate sites and accessibility energies; a rerun with the same finder (any model or threshold) skips ViennaRNA. With `require_sites=True` / `--require-sites`, missing pairs are an error instead of being folded |
-| `cache_dir=` | YAML `cache_dir:`; `pymiraw parity --cache-dir` | folder that caches the RNA folds of every 3'UTR window, shared by all finders |
+| `cache_dir=` | YAML `cache_dir:`; `miraw parity --cache-dir` | folder that caches the RNA folds of every 3'UTR window, shared by all finders |
 | `backend=`, `vienna_bin=` | `--backend`, `--vienna-bin` | which ViennaRNA to use, see below |
 
 ```python
-pymiraw.predict("pairs.tsv", finder="PITA", filters="AccessibilityEnergy;10", sites_dir="runs/sites")
+miraw.predict("pairs.tsv", finder="PITA", filters="AccessibilityEnergy;10", sites_dir="runs/sites")
 ```
 
 ```bash
-pymiraw evaluate pairs.tsv --finder PITA --filter "AccessibilityEnergy;10" --sites-dir runs/sites --name pita_ae
+miraw evaluate pairs.tsv --finder PITA --filter "AccessibilityEnergy;10" --sites-dir runs/sites --name pita_ae
 ```
 
-All settings of a run form one `pymiraw.PredictConfig`. Keep them in a YAML file and use it from both sides:
-`pymiraw predict pairs.tsv -c run.yaml` or `pymiraw.predict("pairs.tsv", config=pymiraw.load_config("run.yaml"))`.
+All settings of a run form one `miraw.PredictConfig`. Keep them in a YAML file and use it from both sides:
+`miraw predict pairs.tsv -c run.yaml` or `miraw.predict("pairs.tsv", config=miraw.load_config("run.yaml"))`.
 The original miRAW `.properties` files are accepted too. Unknown or misspelled settings are errors, not silently ignored.
 Each run's `config.yaml` is a valid config file.
 
@@ -282,53 +282,53 @@ Most of the time goes to RNA folding and grows with 3'UTR length: on 16 cores, t
 Candidate sites come from RNA folding, so the ViennaRNA version slightly changes the results
 ([why](#why-the-viennarna-version-matters)). There are two backends:
 
-* `bindings` (default): the ViennaRNA Python package installed with pyMIRAW (2.7.x), in-process and fast. With the
+* `bindings` (default): the ViennaRNA Python package installed with miRAW (2.7.x), in-process and fast. With the
   original weights it reproduces the paper's benchmark within 0.005 accuracy and F1.
 * `cli`: the `RNAcofold` and `RNAfold` command-line tools of **any** installed ViennaRNA version, run as subprocesses
   (slower). `vienna_bin` / `--vienna-bin` is the folder holding them; without it the tools on the `PATH` are used.
 
-To reproduce the paper **exactly**, use ViennaRNA 2.2.5, the version miRAW used:
+To reproduce the paper **exactly**, use ViennaRNA 2.2.5, the version the original miRAW used:
 
 ```bash
 conda create -n vienna225 -c conda-forge -c bioconda viennarna=2.2.5     # once
-pymiraw evaluate pairs.tsv --backend cli --vienna-bin "$(conda info --base)/envs/vienna225/bin"
+miraw evaluate pairs.tsv --backend cli --vienna-bin "$(conda info --base)/envs/vienna225/bin"
 ```
 
 ```python
-pymiraw.predict("pairs.tsv", backend="cli", vienna_bin="/opt/conda/envs/vienna225/bin")   # your conda path
+miraw.predict("pairs.tsv", backend="cli", vienna_bin="/opt/conda/envs/vienna225/bin")   # your conda path
 ```
 
 Saved sites and fold caches are keyed by backend and version, so results from different versions are never mixed.
 
 ### Training and your own weights
 
-`pymiraw.train` trains a site classifier and returns a `Model`, which can be saved and used wherever the original
-weights are. By default it uses the paper's regime (`pymiraw.TrainConfig.paper()`): the paper's network, Nesterov SGD
+`miraw.train` trains a site classifier and returns a `Model`, which can be saved and used wherever the original
+weights are. By default it uses the paper's regime (`miraw.TrainConfig.paper()`): the paper's network, Nesterov SGD
 with learning rate 0.005, batches of 50, XENT loss, 10 epochs in file order, keeping the epoch with the lowest training
 loss.
 
 ```python
-train_sites = pymiraw.example_sites("train")     # 4,000 labelled sites: mirna_seq, site_seq, label
-test_sites = pymiraw.example_sites("test")       # 1,000 more, for test metrics
-model = pymiraw.train(train_sites, test_sites)   # seconds on the example data
+train_sites = miraw.example_sites("train")     # 4,000 labelled sites: mirna_seq, site_seq, label
+test_sites = miraw.example_sites("test")       # 1,000 more, for test metrics
+model = miraw.train(train_sites, test_sites)   # seconds on the example data
 model.meta["metrics"]                            # test accuracy, AUC, F1, ...
 model.save("my_model.pt")
 
-pymiraw.predict("pairs.tsv", "my_model.pt")      # or the Model object itself
-mine = pymiraw.load_model("my_model.pt")
+miraw.predict("pairs.tsv", "my_model.pt")      # or the Model object itself
+mine = miraw.load_model("my_model.pt")
 mine.score_sites(test_sites.mirna_seq[0], list(test_sites.site_seq[:3]))   # site scores in [-1, 1]
 ```
 
 ```bash
-pymiraw predict pairs.tsv --model my_model.pt
+miraw predict pairs.tsv --model my_model.pt
 ```
 
 Your own training data is a DataFrame with the same columns (`mirna_seq`, `site_seq` of up to 40 nt, `label`), or
-encoded arrays (`pymiraw.encode_sites`). Any `TrainConfig` field can be changed, for example
-`pymiraw.train(train_sites, loss="nll", site_orientation="natural", val_fraction=0.1, patience=3, max_epochs=30)`.
+encoded arrays (`miraw.encode_sites`). Any `TrainConfig` field can be changed, for example
+`miraw.train(train_sites, loss="nll", site_orientation="natural", val_fraction=0.1, patience=3, max_epochs=30)`.
 Only the defaults reproduce the paper's models; the gates test those. New architectures (CNN, RNN, Transformer)
 register under a name and train through the same code: see [docs/extending.md](docs/extending.md) and section 3.5 of
-the notebook. `pymiraw.load_model` also opens DL4J `.bin` files, and `pymiraw model import-dl4j a.bin b.pt` converts them.
+the notebook. `miraw.load_model` also opens DL4J `.bin` files, and `miraw model import-dl4j a.bin b.pt` converts them.
 
 ### Running on CPU or GPU
 
@@ -339,22 +339,22 @@ runs only on CPUs, and the network is small, so each worker process keeps it on 
 **Training uses a GPU when PyTorch finds one**, and the CPU otherwise. Choose explicitly with `accelerator`:
 
 ```python
-model = pymiraw.train(train_sites, test_sites, accelerator="cpu")   # "auto" (default), "cpu", "gpu" (NVIDIA CUDA), "mps" (Apple)
+model = miraw.train(train_sites, test_sites, accelerator="cpu")   # "auto" (default), "cpu", "gpu" (NVIDIA CUDA), "mps" (Apple)
 ```
 
 ```bash
-pymiraw train data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary --accelerator cpu
+miraw train data/original/Data/CrossVal/RelaxedPW60_14K_35K/binary --accelerator cpu
 ```
 
 | | CPU | GPU |
 |---|---|---|
-| Install | `pip install torch --index-url https://download.pytorch.org/whl/cpu`, then pyMIRAW: a much smaller download | the default `pip install` on Linux includes CUDA (needs an NVIDIA driver); on other systems take the command from [pytorch.org](https://pytorch.org/get-started/locally/) |
+| Install | `pip install torch --index-url https://download.pytorch.org/whl/cpu`, then miRAW: a much smaller download | the default `pip install` on Linux includes CUDA (needs an NVIDIA driver); on other systems take the command from [pytorch.org](https://pytorch.org/get-started/locally/) |
 | Check | | `python -c "import torch; print(torch.cuda.is_available())"` prints `True` |
 | One full training fold (14,000 sites, 10 epochs, paper regime) | 21 s (8 threads) | 14 s (NVIDIA T4) |
 | The 4,000 example sites | a few seconds | a few seconds |
 
 The paper's network is small, so a GPU helps little: everything in this README runs comfortably on a CPU-only machine.
-To hide a GPU from pyMIRAW, set `CUDA_VISIBLE_DEVICES=""`. `accelerator="auto"` also picks an Apple-silicon GPU (MPS)
+To hide a GPU from miRAW, set `CUDA_VISIBLE_DEVICES=""`. `accelerator="auto"` also picks an Apple-silicon GPU (MPS)
 when there is one; that has not been tested.
 
 **CPU and GPU training give slightly different models.** They sum floating-point numbers in a different order, so the
@@ -365,12 +365,12 @@ models instead.
 
 ### Reproducing the paper's results
 
-The benchmarks need the authors' data archive (1 GB). Download it once and unpack the parts pyMIRAW uses into
+The benchmarks need the authors' data archive (1 GB). Download it once and unpack the parts miRAW uses into
 `data/original/` (run these from a clone of this repository, see [For developers](#for-developers)):
 
 ```bash
 curl -L -o PLOSComb.7z https://bitbucket.org/bipous/miraw_data/raw/master/PLOSComb.7z
-pymiraw data unpack-archive PLOSComb.7z      # needs the [data] extra
+miraw data unpack-archive PLOSComb.7z      # needs the [data] extra
 ```
 
 ```
@@ -398,16 +398,16 @@ can also be run one at a time (`python scripts/verify_gates.py --help`). Trainin
 ### For developers
 
 ```bash
-git clone https://github.com/AlbertPlaPlanas/pyMiraw.git && cd pyMiraw
-conda env create -f environment.yml        # pins every version; or: conda-lock install -n pymiraw conda-lock.yml
-conda activate pymiraw
+git clone https://github.com/AlbertPlaPlanas/miraw.git && cd miraw
+conda env create -f environment.yml        # pins every version; or: conda-lock install -n miraw conda-lock.yml
+conda activate miraw
 pip install -e . --no-deps
 pre-commit install                         # secret and large-file guards, once per clone
 make test                                  # the fast tests, as in CI (about 5 minutes)
 ```
 
 The [Makefile](Makefile) has one-word targets: `test`, `lint`, `parity`, `train-cv`, `gate2`, `verify-gates`.
-Code map (`src/pymiraw/`):
+Code map (`src/miraw/`):
 
 | Module | Role |
 |---|---|
@@ -421,7 +421,7 @@ Code map (`src/pymiraw/`):
 | `training/` | Lightning training loop, losses, released-fold loader, cross-validation |
 | `evaluation/` | metrics, Gate 1 benchmark, Gate 2 non-inferiority test |
 | `resources/` | bundled weights, the paper's published results, example data |
-| `cli.py` | the `pymiraw` command |
+| `cli.py` | the `miraw` command |
 
 Releases go to PyPI through a GitHub Actions workflow: see [docs/releasing.md](docs/releasing.md). After any change
 that could affect results, run `make verify-gates`. The design, decisions and gate rules are in
@@ -432,9 +432,10 @@ that could affect results, run `make verify-gates`. The design, decisions and ga
 
 ## 3. Status
 
-**Summary (2026-10-29):** the port is functionally complete and self-contained: the original weights ship with the package
+**Summary (2026-10-30):** the port is functionally complete and self-contained: the original weights ship with the package
 and are the default; retrained models pass Gate 2 but have not been promoted to default. Every gate was re-run from scratch
 after the API restructure (`scripts/verify_gates.py`) and gave the committed numbers exactly. All four gates pass.
+Version 0.2.0 was published on PyPI as `pymiraw`; from 0.3.0 the package, the import and the command are `miraw`.
 
 | Gate | Result |
 |---|---|
@@ -445,8 +446,8 @@ after the API restructure (`scripts/verify_gates.py`) and gave the committed num
 
 **Remaining:** testing the installation in a fresh environment (no ViennaRNA or PyTorch preinstalled;
 also macOS and Windows), a decision on promoting a retrained model, running the original `miRAW.jar` side by side (also
-needed to compare speed), the SpecificZones and ReservedZones filters (unused by the paper), profiling, publishing on
-PyPI (wheel, metadata and the PyPI page; until then install from GitHub) and the `v1.0.0` release.
+needed to compare speed), the SpecificZones and ReservedZones filters (unused by the paper), profiling, the first
+release under the name `miraw` (0.3.0) and the `v1.0.0` release.
 
 To check these results yourself, see [Reproducing the paper's results](#reproducing-the-papers-results). Detailed log,
 numbers and commands: [docs/PROGRESS.md](docs/PROGRESS.md). Design and decisions: [docs/PLAN.md](docs/PLAN.md).
@@ -455,7 +456,8 @@ numbers and commands: [docs/PROGRESS.md](docs/PROGRESS.md). Design and decisions
 
 ## Citation
 
-pyMIRAW is a reimplementation; the method is miRAW's. If you use pyMIRAW, please cite the original paper:
+This package reimplements the original miRAW, and the method is the original's. If you use it, please cite the original
+paper:
 
 > Pla A, Zhong X, Rayner S (2018). miRAW: A deep learning-based approach to predict microRNA targets by analyzing whole
 > microRNA transcripts. *PLoS Computational Biology* 14(7): e1006185. https://doi.org/10.1371/journal.pcbi.1006185

@@ -1,6 +1,6 @@
 cff-version: 1.2.0
-message: "pyMIRAW reimplements miRAW. If you use it, please cite the original miRAW paper (preferred citation below)."
-title: "pyMIRAW: Python/PyTorch reimplementation of miRAW"
+message: "This package reimplements the original miRAW in Python. If you use it, please cite the original miRAW paper (preferred citation below)."
+title: "miRAW: Python/PyTorch reimplementation of the original miRAW"
 type: software
 license: MIT
 authors:

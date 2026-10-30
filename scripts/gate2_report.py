@@ -1,8 +1,8 @@
 """Gate 2 report from the committed result files: non-inferiority of the retrained models vs the paper (rule: docs/PLAN.md section 6).
 
 Verdict rows:
-  site   : per-fold differences vs the paper's own fold models re-scored (pymiraw/resources/paper_cv_xent_models_rescored.csv).
-  gene   : per (config, set) differences vs the paper's GlobalSummary (pymiraw/resources/paper_global_summary.csv).
+  site   : per-fold differences vs the paper's own fold models re-scored (miraw/resources/paper_cv_xent_models_rescored.csv).
+  gene   : per (config, set) differences vs the paper's GlobalSummary (miraw/resources/paper_global_summary.csv).
   gene/p : per-fold paired differences, our fold-f model - the paper's fold-f model through the same pipeline
            (docs/results/gene_level_paper_folds.csv); required once more than one fold has gene-level results.
 Diagnostics (printed, not in the verdict):
@@ -15,8 +15,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from pymiraw import resources
-from pymiraw.evaluation.noninferiority import CONFIDENCE, MARGINS, METHOD, non_inferiority
+from miraw import resources
+from miraw.evaluation.noninferiority import CONFIDENCE, MARGINS, METHOD, non_inferiority
 
 root = Path(__file__).resolve().parents[1]
 results = Path(sys.argv[1]) if len(sys.argv) > 1 else root / "docs/results"  # or a re-run (scripts/verify_gates.py)

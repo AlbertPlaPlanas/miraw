@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from pymiraw.config import PredictConfig, from_legacy_properties, resolve_model_path
-from pymiraw.evaluation.metrics import confusion, gene_level_metrics, roc_auc, summarize
-from pymiraw.storage import ORIGINAL_WEIGHTS_ENV, load_manifest, original_weights_path, sha256_file
+from miraw.config import PredictConfig, from_legacy_properties, resolve_model_path
+from miraw.evaluation.metrics import confusion, gene_level_metrics, roc_auc, summarize
+from miraw.storage import ORIGINAL_WEIGHTS_ENV, load_manifest, original_weights_path, sha256_file
 
 
 def test_confusion_and_derived_metrics_match_paper_summary_row():
@@ -77,7 +77,7 @@ def test_legacy_properties_parsing(tmp_path):
 
 
 def test_original_weights_default_to_the_bundled_copy(monkeypatch):
-    from pymiraw import resources
+    from miraw import resources
 
     monkeypatch.delenv(ORIGINAL_WEIGHTS_ENV, raising=False)
     assert original_weights_path() == resources.original_weights() and original_weights_path().is_file()
@@ -97,7 +97,7 @@ def test_predict_config_rejects_unknown_keys():
 def test_unpack_archive_flattens_and_filters(tmp_path):
     import py7zr
 
-    from pymiraw import storage
+    from miraw import storage
 
     src = tmp_path / "src"
     cv, full = "Results/ResultsCV/VeryDeepXENT14K_e10/Set3", "Results/Evaluate_14K_FULL/ts_NF"
@@ -119,7 +119,7 @@ def test_vienna_bin_reaches_the_pipeline_config(monkeypatch, tmp_path):
     """--vienna-bin must reach the run configuration (the README promises an exact-reproduction recipe)."""
     from typer.testing import CliRunner
 
-    from pymiraw import api, cli
+    from miraw import api, cli
 
     seen = {}
 
@@ -139,7 +139,7 @@ def test_vienna_bin_reaches_the_pipeline_config(monkeypatch, tmp_path):
 
 
 def test_vienna_bin_without_the_cli_backend_is_an_error():
-    from pymiraw.prediction.pipeline import make_folding_backend
+    from miraw.prediction.pipeline import make_folding_backend
 
     with pytest.raises(ValueError, match="cli"):
         make_folding_backend(PredictConfig(vienna_bin="/opt/ref/bin"))

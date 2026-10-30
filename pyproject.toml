@@ -3,8 +3,8 @@ requires = ["hatchling>=1.27", "hatch-fancy-pypi-readme>=24"]
 build-backend = "hatchling.build"
 
 [project]
-name = "pymiraw"
-dynamic = ["version", "readme"]  # version: src/pymiraw/__init__.py; readme: README.md with absolute links (below)
+name = "miraw"
+dynamic = ["version", "readme"]  # version: src/miraw/__init__.py; readme: README.md with absolute links (below)
 description = "miRNA target prediction with deep learning: a Python/PyTorch reimplementation of miRAW (Pla et al., PLoS Comput Biol 2018)"
 requires-python = ">=3.11"
 license = "MIT"
@@ -37,26 +37,26 @@ notebook = ["jupyterlab", "matplotlib"]
 dev = ["pytest", "pytest-cov", "pytest-xdist", "hypothesis", "ruff", "mypy", "nbformat", "nbclient", "ipykernel"]
 
 [project.urls]
-Homepage = "https://github.com/AlbertPlaPlanas/pyMiraw"
-Documentation = "https://github.com/AlbertPlaPlanas/pyMiraw#readme"
-Tutorial = "https://github.com/AlbertPlaPlanas/pyMiraw/blob/main/notebooks/pymiraw_tutorial.ipynb"
-Issues = "https://github.com/AlbertPlaPlanas/pyMiraw/issues"
-Changelog = "https://github.com/AlbertPlaPlanas/pyMiraw/blob/main/docs/PROGRESS.md"
+Homepage = "https://github.com/AlbertPlaPlanas/miraw"
+Documentation = "https://github.com/AlbertPlaPlanas/miraw#readme"
+Tutorial = "https://github.com/AlbertPlaPlanas/miraw/blob/main/notebooks/miraw_tutorial.ipynb"
+Issues = "https://github.com/AlbertPlaPlanas/miraw/issues"
+Changelog = "https://github.com/AlbertPlaPlanas/miraw/blob/main/docs/PROGRESS.md"
 Paper = "https://doi.org/10.1371/journal.pcbi.1006185"
 
 [project.scripts]
-pymiraw = "pymiraw.cli:app"
+miraw = "miraw.cli:app"
 
 [tool.hatch.version]
-path = "src/pymiraw/__init__.py"
+path = "src/miraw/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/pymiraw"]  # includes src/pymiraw/resources (weights, reference tables, examples)
+packages = ["src/miraw"]  # includes src/miraw/resources (weights, reference tables, examples)
 
 [tool.hatch.build.targets.sdist]
 # the package, its tests and the two repository files the tests read; not the notebooks, docs, CI or env files
 include = [
-  "src/pymiraw", "tests", "README.md", "LICENSE", "CITATION.cff", "pyproject.toml",
+  "src/miraw", "tests", "README.md", "LICENSE", "CITATION.cff", "pyproject.toml",
   "data/manifest.yaml", "scripts/check_secrets.py",
 ]
 
@@ -71,19 +71,19 @@ path = "README.md"
 
 [[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
 pattern = '(?s)```mermaid\n.*?```'
-replacement = '*The pipeline diagram is on the [GitHub page](https://github.com/AlbertPlaPlanas/pyMiraw#how-miraw-predicts-targets).*'
+replacement = '*The pipeline diagram is on the [GitHub page](https://github.com/AlbertPlaPlanas/miraw#how-miraw-predicts-targets).*'
 
 [[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
 pattern = '(src(?:set)?=")(docs/[^"]+)"'
-replacement = '\1https://raw.githubusercontent.com/AlbertPlaPlanas/pyMiraw/main/\2"'
+replacement = '\1https://raw.githubusercontent.com/AlbertPlaPlanas/miraw/main/\2"'
 
 [[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
 pattern = '\]\(#([^)]+)\)'
-replacement = '](https://github.com/AlbertPlaPlanas/pyMiraw#\1)'
+replacement = '](https://github.com/AlbertPlaPlanas/miraw#\1)'
 
 [[tool.hatch.metadata.hooks.fancy-pypi-readme.substitutions]]
 pattern = '\]\((?!https?:|#)([^)]+)\)'
-replacement = '](https://github.com/AlbertPlaPlanas/pyMiraw/blob/main/\1)'
+replacement = '](https://github.com/AlbertPlaPlanas/miraw/blob/main/\1)'
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -100,7 +100,7 @@ markers = [
   "s3: needs S3 access",
   "reference: needs the Java oracle environment",
   "acceptance: full benchmark runs",
-  "data: needs the released miRAW data (pymiraw data pull)",
+  "data: needs the released miRAW data (miraw data pull)",
 ]
 
 [tool.ruff]
@@ -111,7 +111,7 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ruff.lint.per-file-ignores]
-"src/pymiraw/cli.py" = ["B008"]
+"src/miraw/cli.py" = ["B008"]
 "scripts/*_report.py" = ["E501"]
 "scripts/gene_level_compare.py" = ["E501"]
 "scripts/viennarna_version_check.py" = ["E501"]

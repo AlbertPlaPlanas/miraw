@@ -36,7 +36,7 @@ def test_forbidden_files_are_detected(path):
     assert cs.is_forbidden_file(path)
 
 
-@pytest.mark.parametrize("path", [".env.example", "README.md", "src/pymiraw/env.py", "docs/secrets.md"])
+@pytest.mark.parametrize("path", [".env.example", "README.md", "src/miraw/env.py", "docs/secrets.md"])
 def test_regular_files_are_allowed(path):
     assert not cs.is_forbidden_file(path)
 
@@ -142,6 +142,6 @@ def test_guard_blocks_force_added_secrets_file(repo):
 
 
 def test_guard_passes_clean_files(repo):
-    (repo / "README.md").write_text("# pyMIRAW\n")
+    (repo / "README.md").write_text("# miRAW\n")
     _git(repo, "add", "README.md")
     assert _run_guard(repo, "README.md").returncode == 0

@@ -2,7 +2,7 @@
 
 import torch
 
-from pymiraw import SiteClassifier, register_model
+from miraw import SiteClassifier, register_model
 
 
 @register_model("test-spawn-linear")

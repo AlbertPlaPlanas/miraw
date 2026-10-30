@@ -437,10 +437,10 @@ L 680.832 272.448
    </g>
   </g>
   <g id="text_39">
-   <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #f0efec" x="6.912" y="18.406125" transform="rotate(-0 6.912 18.406125)">Retrained from scratch, pyMIRAW models vary from fold to fold as much as the paper's own</text>
+   <text style="font-weight: 700; font-size: 12px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #f0efec" x="6.912" y="18.406125" transform="rotate(-0 6.912 18.406125)">Retrained from scratch, miRAW models vary from fold to fold as much as the paper's own</text>
   </g>
   <g id="text_40">
-   <text style="font-size: 9.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #c3c2b7" x="6.912" y="36.630516" transform="rotate(-0 6.912 36.630516)">Each dot is one fold's model (pyMIRAW: mean over its seeds). Same folds, pipeline and ViennaRNA for both.</text>
+   <text style="font-size: 9.5px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #c3c2b7" x="6.912" y="36.630516" transform="rotate(-0 6.912 36.630516)">Each dot is one fold's model (miRAW: mean over its seeds). Same folds, pipeline and ViennaRNA for both.</text>
   </g>
   <g id="legend_1">
    <g id="PathCollection_5">
@@ -449,7 +449,7 @@ L 680.832 272.448
     </g>
    </g>
    <g id="text_41">
-    <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #c3c2b7" x="32.256" y="58.282594" transform="rotate(-0 32.256 58.282594)">pyMIRAW, retrained</text>
+    <text style="font-size: 9px; font-family: 'DejaVu Sans', 'Bitstream Vera Sans', 'Computer Modern Sans Serif', 'Lucida Grande', 'Verdana', 'Geneva', 'Lucid', 'Arial', 'Helvetica', 'Avant Garde', sans-serif; text-anchor: start; fill: #c3c2b7" x="32.256" y="58.282594" transform="rotate(-0 32.256 58.282594)">miRAW, retrained</text>
    </g>
    <g id="PathCollection_6">
     <g>

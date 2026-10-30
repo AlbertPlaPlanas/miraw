@@ -3,12 +3,12 @@
 import numpy as np
 import torch
 
-from pymiraw.encoding.onehot import OneHotFlat
-from pymiraw.folding.base import Fold, FoldService
-from pymiraw.models.base import SiteClassifier
-from pymiraw.prediction.pipeline import Predictor
-from pymiraw.sites.filters.accessibility import AccessibilityEnergyFilter, site_opening_energy
-from pymiraw.sites.finders.default import DefaultFinder
+from miraw.encoding.onehot import OneHotFlat
+from miraw.folding.base import Fold, FoldService
+from miraw.models.base import SiteClassifier
+from miraw.prediction.pipeline import Predictor
+from miraw.sites.filters.accessibility import AccessibilityEnergyFilter, site_opening_energy
+from miraw.sites.finders.default import DefaultFinder
 from tests.unit.test_finders import MIRNA, FakeBackend, duplex_fold
 
 
